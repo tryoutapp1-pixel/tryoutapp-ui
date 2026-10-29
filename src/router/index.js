@@ -52,7 +52,25 @@ const routes = [
     children: [
       { path: '', name: 'admin-dashboard', component: () => import('../views/admin/AdminDashboardPage.vue') },
       { path: 'profile', name: 'admin-profile', component: () => import('../views/user/ProfilePage.vue') },
-      { path: 'account', name: 'admin-account', component: () => import('../views/user/AccountSecurityPage.vue') }
+      { path: 'account', name: 'admin-account', component: () => import('../views/user/AccountSecurityPage.vue') },
+
+      // Users (FA1, FA2) — read-only
+      { path: 'users', name: 'admin-users', component: () => import('../views/admin/UsersListPage.vue') },
+      { path: 'users/:id', name: 'admin-user-detail', component: () => import('../views/admin/UserDetailPage.vue') },
+
+      // Images / files (FA3, FA4, FA5, FA7)
+      { path: 'images', name: 'admin-images', component: () => import('../views/admin/ImagesPage.vue') },
+
+      // Materials (FA8-11, FA24)
+      { path: 'materials', name: 'admin-materials', component: () => import('../views/admin/MaterialsPage.vue') },
+      { path: 'materials/:id', name: 'admin-material-detail', component: () => import('../views/admin/MaterialDetailPage.vue') },
+
+      // Assessments + question packages
+      { path: 'assessments', name: 'admin-assessments', component: () => import('../views/admin/AssessmentsListPage.vue') },
+      { path: 'assessments/new', name: 'admin-assessment-new', component: () => import('../views/admin/AssessmentFormPage.vue') },
+      { path: 'assessments/:id', name: 'admin-assessment-detail', component: () => import('../views/admin/AssessmentDetailPage.vue') },
+      { path: 'assessments/:id/edit', name: 'admin-assessment-edit', component: () => import('../views/admin/AssessmentFormPage.vue') },
+      { path: 'assessments/:id/questions', name: 'admin-assessment-questions', component: () => import('../views/admin/QuestionPackageUploadPage.vue') }
     ]
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('../views/errors/NotFoundPage.vue') }

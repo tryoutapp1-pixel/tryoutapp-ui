@@ -16,6 +16,10 @@ const drawer = ref(true)
 
 const navItems = [
   { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard-outline' },
+  { title: 'Users', to: '/admin/users', icon: 'mdi-account-group-outline' },
+  { title: 'Images', to: '/admin/images', icon: 'mdi-image-multiple-outline' },
+  { title: 'Materials', to: '/admin/materials', icon: 'mdi-book-open-page-variant-outline' },
+  { title: 'Assessments', to: '/admin/assessments', icon: 'mdi-clipboard-text-outline' },
   { title: 'Profile', to: '/admin/profile', icon: 'mdi-account-circle-outline' }
 ]
 
