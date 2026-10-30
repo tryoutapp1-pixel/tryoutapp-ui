@@ -26,8 +26,8 @@ const COLORS = {
   CANCELLED: 'grey'
 }
 
-const label = computed(() => String(props.value))
-const color = computed(() => COLORS[label.value.toUpperCase()] || 'grey')
+const label = computed(() => String(props.value).replace("_", " "))
+const color = computed(() => COLORS[props.value.toUpperCase()] || 'grey')
 </script>
 
 <template>

@@ -35,21 +35,27 @@ onMounted(() => load(1))
         <v-table>
           <thead>
             <tr>
+              <th>Role</th>
               <th>Name</th>
               <th>Email</th>
-              <th>Role</th>
               <th>Status</th>
-              <th>Created</th>
+              <!-- <th>Registered</th> -->
+              <th>Subscription</th>
+              <!-- <th>Start Date</th>
+              <th>Expired Date</th> -->
               <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="u in items" :key="u.id">
+              <td><StatusChip :value="u.role" /></td>
               <td class="font-weight-medium">{{ u.name }}</td>
               <td>{{ u.email }}</td>
-              <td><StatusChip :value="u.role" /></td>
               <td><StatusChip :value="u.status" /></td>
-              <td>{{ formatDate(u.created_at) }}</td>
+              <!-- <td>{{ formatDate(u.created_at) }}</td> -->
+              <td><StatusChip :value="u.subscription_status" /></td>
+              <!-- <td>{{ formatDate(u.subscription_started_at) }}</td>
+              <td>{{ formatDate(u.subscription_expired_at) }}</td> -->
               <td class="text-right">
                 <v-btn
                   size="small"

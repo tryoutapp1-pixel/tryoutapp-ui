@@ -88,17 +88,23 @@ onMounted(load)
       <v-card v-if="user" class="pa-6" max-width="640">
         <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">ID</v-col><v-col cols="8">{{ user.id }}</v-col></v-row>
         <v-divider class="my-2" />
+        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Role</v-col><v-col cols="8"><StatusChip :value="user.role" /></v-col></v-row>
+        <v-divider class="my-2" />
         <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Name</v-col><v-col cols="8" class="font-weight-medium">{{ user.name }}</v-col></v-row>
         <v-divider class="my-2" />
         <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Email</v-col><v-col cols="8">{{ user.email }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Role</v-col><v-col cols="8"><StatusChip :value="user.role" /></v-col></v-row>
         <v-divider class="my-2" />
         <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Status</v-col><v-col cols="8"><StatusChip :value="user.status" /></v-col></v-row>
         <v-divider class="my-2" />
         <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Email verified</v-col><v-col cols="8">{{ formatDate(user.email_verified_at) }}</v-col></v-row>
         <v-divider class="my-2" />
         <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Created</v-col><v-col cols="8">{{ formatDate(user.created_at) }}</v-col></v-row>
+        <v-divider class="my-2" />
+        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Subscription</v-col><v-col cols="8"><StatusChip :value="user.subscription_status" /></v-col></v-row>
+        <v-divider class="my-2" />
+        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Start Date</v-col><v-col cols="8">{{ formatDate(user.subscription_started_at) }}</v-col></v-row>
+        <v-divider class="my-2" />
+        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Expired Date</v-col><v-col cols="8">{{ formatDate(user.subscription_expired_at) }}</v-col></v-row>
       </v-card>
     </StatePanel>
 
