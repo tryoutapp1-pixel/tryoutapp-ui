@@ -172,7 +172,12 @@ onMounted(load)
                       <template #prepend>
                         <v-chip size="x-small" label class="me-2">{{ o.option_code }}</v-chip>
                       </template>
-                      <v-list-item-title class="text-body-2">{{ o.option_text }}</v-list-item-title>
+                      <v-list-item-title class="text-body-2">
+                        {{ o.option_text }}
+                      </v-list-item-title>
+                      <v-list-item-media v-if="o.option_image_url">
+                        <v-img :src="o.option_image_url" max-width="320" class="mb-3 align-start rounded" />
+                      </v-list-item-media>
                       <template #append>
                         <div class="d-flex align-center ga-2">
                           <span class="text-caption text-medium-emphasis">score: {{ o.score }}</span>
@@ -191,9 +196,10 @@ onMounted(load)
                     {{ q.explanation }}
                   </v-alert>
                   <div v-if="q.explanation_file_url" class="mt-2">
-                    <a :href="q.explanation_file_url" target="_blank" rel="noopener" class="text-primary text-body-2">
+                    <v-img v-if="q.explanation_file_url" :src="q.explanation_file_url" max-width="320" class="mb-3 rounded" />
+                    <!-- <a :href="q.explanation_file_url" target="_blank" rel="noopener" class="text-primary text-body-2">
                       <v-icon icon="mdi-paperclip" size="small" /> Explanation file
-                    </a>
+                    </a> -->
                   </div>
                 </v-expansion-panel-text>
               </v-expansion-panel>
