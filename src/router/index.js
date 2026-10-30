@@ -38,11 +38,29 @@ const routes = [
       { path: '', name: 'user-dashboard', component: () => import('../views/user/UserDashboardPage.vue') },
       { path: 'profile', name: 'user-profile', component: () => import('../views/user/ProfilePage.vue') },
       { path: 'account', name: 'user-account', component: () => import('../views/user/AccountSecurityPage.vue') },
-      { path: 'materials', name: 'user-materials', component: () => import('../views/user/ComingSoonPage.vue'), meta: { title: 'Materials' } },
-      { path: 'latihan', name: 'user-latihan', component: () => import('../views/user/ComingSoonPage.vue'), meta: { title: 'Latihan' } },
-      { path: 'tryout', name: 'user-tryout', component: () => import('../views/user/ComingSoonPage.vue'), meta: { title: 'Try Out' } },
-      { path: 'subscription', name: 'user-subscription', component: () => import('../views/user/ComingSoonPage.vue'), meta: { title: 'Subscription' } },
-      { path: 'transactions', name: 'user-transactions', component: () => import('../views/user/ComingSoonPage.vue'), meta: { title: 'Transactions' } }
+
+      // Subscription & payment (FU2, FU6, FU7)
+      { path: 'subscription', name: 'user-subscription', component: () => import('../views/user/SubscriptionPage.vue') },
+      { path: 'transactions', name: 'user-transactions', component: () => import('../views/user/TransactionsPage.vue') },
+
+      // Materials (FU8, FU9)
+      { path: 'materials', name: 'user-materials', component: () => import('../views/user/MaterialsListPage.vue') },
+      { path: 'materials/:id', name: 'user-material-detail', component: () => import('../views/user/MaterialDetailPage.vue') },
+
+      // Latihan (FU10-FU15) — untimed assessment engine
+      { path: 'latihan', name: 'user-latihan', component: () => import('../views/user/AssessmentListPage.vue'), meta: { kind: 'latihan' } },
+      { path: 'latihan/:id', name: 'user-latihan-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'latihan' } },
+      { path: 'latihan/:id/attempt/:attemptId', name: 'user-latihan-attempt', component: () => import('../views/user/AttemptPage.vue'), meta: { kind: 'latihan' } },
+      { path: 'latihan/:id/attempt/:attemptId/result', name: 'user-latihan-result', component: () => import('../views/user/AttemptResultPage.vue'), meta: { kind: 'latihan' } },
+      { path: 'latihan/:id/explanations', name: 'user-latihan-explanations', component: () => import('../views/user/ExplanationsPage.vue'), meta: { kind: 'latihan' } },
+
+      // Try Out (FU16-FU22) — same engine, with a backend-driven timer
+      { path: 'tryout', name: 'user-tryout', component: () => import('../views/user/AssessmentListPage.vue'), meta: { kind: 'tryout' } },
+      { path: 'tryout/statistics', name: 'user-tryout-statistics', component: () => import('../views/user/StatisticsPage.vue') },
+      { path: 'tryout/:id', name: 'user-tryout-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'tryout' } },
+      { path: 'tryout/:id/attempt/:attemptId', name: 'user-tryout-attempt', component: () => import('../views/user/AttemptPage.vue'), meta: { kind: 'tryout' } },
+      { path: 'tryout/:id/attempt/:attemptId/result', name: 'user-tryout-result', component: () => import('../views/user/AttemptResultPage.vue'), meta: { kind: 'tryout' } },
+      { path: 'tryout/:id/explanations', name: 'user-tryout-explanations', component: () => import('../views/user/ExplanationsPage.vue'), meta: { kind: 'tryout' } }
     ]
   },
   {

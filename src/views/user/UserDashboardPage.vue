@@ -6,28 +6,43 @@ import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../../stores/auth'
 import { useProfileStore } from '../../stores/profile'
+import { useSubscriptionStore } from '../../stores/subscription'
 import PageHeader from '../../components/PageHeader.vue'
+import StatusChip from '../../components/StatusChip.vue'
 
 const authStore = useAuthStore()
 const profileStore = useProfileStore()
+const subscriptionStore = useSubscriptionStore()
 const { user } = storeToRefs(authStore)
+const { subscription } = storeToRefs(subscriptionStore)
 
 const cards = [
   { title: 'Materials', text: 'Read released learning materials.', to: '/app/materials', icon: 'mdi-book-open-page-variant-outline' },
   { title: 'Latihan', text: 'Untimed practice assessments.', to: '/app/latihan', icon: 'mdi-pencil-outline' },
   { title: 'Try Out', text: 'Timed try out assessments.', to: '/app/tryout', icon: 'mdi-timer-outline' },
-  { title: 'Subscription', text: 'View your plan and go Premium.', to: '/app/subscription', icon: 'mdi-crown-outline' }
+  { title: 'My Progress', text: 'Track your Try Out scores.', to: '/app/tryout/statistics', icon: 'mdi-chart-line' },
+  { title: 'Subscription', text: 'View your plan and go Premium.', to: '/app/subscription', icon: 'mdi-crown-outline' },
+  { title: 'Transactions', text: 'Your payment history.', to: '/app/transactions', icon: 'mdi-receipt-text-outline' }
 ]
 
 onMounted(() => {
   // Warm the profile store so the menu/name is fresh.
   profileStore.loadProfile().catch(() => {})
+  // Show the current plan badge; subscription store is authoritative.
+  subscriptionStore.fetchSubscription().catch(() => {})
 })
 </script>
 
 <template>
   <div>
-    <PageHeader :title="`Hi, ${user ? user.name : 'there'}`" subtitle="Pick up where you left off." />
+    <PageHeader :title="`Hi, ${user ? user.name : 'there'}`" subtitle="Pick up where you left off.">
+      <template #actions>
+        <div v-if="subscription" class="d-flex align-center ga-2">
+          <span class="text-caption text-medium-emphasis">Plan</span>
+          <StatusChip :value="subscription.status" />
+        </div>
+      </template>
+    </PageHeader>
     <v-row>
       <v-col v-for="card in cards" :key="card.to" cols="12" sm="6" md="3">
         <v-card :to="card.to" class="pa-5 h-100" hover>

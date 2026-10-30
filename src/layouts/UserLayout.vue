@@ -19,6 +19,7 @@ const navItems = [
   { title: 'Materials', to: '/app/materials', icon: 'mdi-book-open-page-variant-outline' },
   { title: 'Latihan', to: '/app/latihan', icon: 'mdi-pencil-outline' },
   { title: 'Try Out', to: '/app/tryout', icon: 'mdi-timer-outline' },
+  { title: 'My Progress', to: '/app/tryout/statistics', icon: 'mdi-chart-line' },
   { title: 'Subscription', to: '/app/subscription', icon: 'mdi-crown-outline' },
   { title: 'Transactions', to: '/app/transactions', icon: 'mdi-receipt-text-outline' },
   { title: 'Profile', to: '/app/profile', icon: 'mdi-account-circle-outline' }
