@@ -11,11 +11,19 @@
 // This avoids inventing data the backend does not provide.
 import { ref } from 'vue'
 import SignedImage from './SignedImage.vue'
+import PremiumNotice from './PremiumNotice.vue'
 
 const props = defineProps({
   questions: { type: Array, default: () => [] }, // backend explanation items
   // Optional: questionId -> selectedOptionId, from the current-session attempt.
-  userAnswers: { type: Object, default: () => ({}) }
+  userAnswers: { type: Object, default: () => ({}) },
+  // Premium gate (Feature 3 / Feature 4). When false, the written explanation
+  // and explanation image are hidden and a Premium prompt is shown instead.
+  // Question results (options, correct answer, the user's choice) remain
+  // visible so Free users still get their results. NOTE: this is presentation
+  // only — the backend currently still returns explanation data to Free users,
+  // so this is NOT an access-control guarantee (see backend dependency note).
+  showExplanation: { type: Boolean, default: true }
 })
 const emit = defineEmits(['refresh'])
 
@@ -116,14 +124,23 @@ function go(i) {
 
         <v-divider class="mb-3" />
         <h4 class="text-subtitle-2 font-weight-bold mb-2">Explanation</h4>
-        <p class="text-body-2 mb-3" style="white-space: pre-line">
-          {{ q.explanation || 'No explanation provided.' }}
-        </p>
-        <SignedImage
-          v-if="q.attachment && q.attachment.url"
-          :src="q.attachment.url"
-          :alt="`Explanation ${q.number} image`"
-          @refresh="emit('refresh')"
+
+        <template v-if="showExplanation">
+          <p class="text-body-2 mb-3" style="white-space: pre-line">
+            {{ q.explanation || 'No explanation provided.' }}
+          </p>
+          <SignedImage
+            v-if="q.attachment && q.attachment.url"
+            :src="q.attachment.url"
+            :alt="`Explanation ${q.number} image`"
+            @refresh="emit('refresh')"
+          />
+        </template>
+
+        <PremiumNotice
+          v-else
+          title="Explanations are a Premium feature"
+          message="Your results and the correct answers are shown above. Upgrade to Premium to read the full explanation for every question."
         />
 
         <div class="d-flex justify-space-between mt-5">

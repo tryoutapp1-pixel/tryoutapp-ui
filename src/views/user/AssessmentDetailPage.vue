@@ -3,11 +3,12 @@
 // `kind`. Shows title, description, question count, duration (Try Out), and
 // passing scores. "Start / Continue" calls POST /:kind/:id/attempts, which the
 // backend makes idempotent (it reuses an IN_PROGRESS attempt), then routes to
-// the attempt engine. A 403 means Premium is required.
+// the distraction-free attempt engine. A 403 means Premium is required.
 //
-// Note: the backend detail endpoint does not expose prior-attempt history, so
-// a single "Start / Continue" action covers both cases (the backend resolves
-// which attempt to use). Documented in the implementation report.
+// A single "Start / Continue" action covers both the new-attempt and resume
+// cases (the backend resolves which attempt to use). A separate "View attempt
+// history" link opens the per-assessment history page (Try Out is backed by
+// GET /users/tryout/statistics; Latihan history has no backend list endpoint).
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssessmentsStore } from '../../stores/assessments'
@@ -50,7 +51,11 @@ async function start() {
   starting.value = true
   try {
     const data = await userService.startAttempt(kind.value, route.params.id)
-    router.push(`/app/${kind.value}/${route.params.id}/attempt/${data.attempt_id}`)
+    // The active attempt runs under the distraction-free AssessmentLayout.
+    router.push({
+      name: `user-${kind.value}-attempt`,
+      params: { id: route.params.id, attemptId: data.attempt_id }
+    })
   } catch (e) {
     if (e.status === 403) {
       forbidden.value = true
@@ -150,6 +155,17 @@ onMounted(load)
           @click="start"
         >
           Start / Continue
+        </v-btn>
+
+        <v-btn
+          variant="tonal"
+          size="large"
+          block
+          class="mt-3"
+          prepend-icon="mdi-history"
+          :to="{ name: `user-${kind}-history`, params: { id: route.params.id } }"
+        >
+          View attempt history
         </v-btn>
       </v-card>
     </StatePanel>

@@ -9,18 +9,22 @@
 // user's answers for a finalized attempt). The ExplanationList component makes
 // this limitation explicit in the UI.
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAttemptStore } from '../../stores/attempt'
+import { useSubscriptionStore } from '../../stores/subscription'
 import userService from '../../services/userService'
 import PageHeader from '../../components/PageHeader.vue'
 import StatePanel from '../../components/StatePanel.vue'
 import ExplanationList from '../../components/assessment/ExplanationList.vue'
 
 const route = useRoute()
-const router = useRouter()
 const attemptStore = useAttemptStore()
+const subscriptionStore = useSubscriptionStore()
 const { answers: storeAnswers, assessmentId: storeAssessmentId } = storeToRefs(attemptStore)
+// Premium gate for showing explanation text (Feature 3 / Feature 4).
+// Presentation only; the backend authorization remains authoritative.
+const { isPremium } = storeToRefs(subscriptionStore)
 
 const kind = computed(() => route.meta.kind || 'latihan')
 const assessmentId = computed(() => route.params.id)
@@ -41,6 +45,10 @@ async function load() {
   error.value = ''
   forbidden.value = false
   try {
+    // Refresh the authoritative subscription status so the Premium gate on the
+    // explanation text reflects the current plan (it may have expired since the
+    // page was last opened).
+    subscriptionStore.fetchSubscription().catch(() => {})
     questions.value = await userService.getExplanations(kind.value, assessmentId.value)
   } catch (e) {
     if (e.status === 403) forbidden.value = true
@@ -57,7 +65,7 @@ onMounted(load)
   <div>
     <PageHeader :title="`${kind === 'tryout' ? 'Try Out' : 'Latihan'} explanations`">
       <template #actions>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push(`/app/${kind}/${assessmentId}`)">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: `user-${kind}-detail`, params: { id: assessmentId } }">
           Back
         </v-btn>
       </template>
@@ -79,7 +87,12 @@ onMounted(load)
       empty-text="No explanations available."
       @retry="load"
     >
-      <ExplanationList :questions="questions" :user-answers="userAnswers" @refresh="load" />
+      <ExplanationList
+        :questions="questions"
+        :user-answers="userAnswers"
+        :show-explanation="isPremium"
+        @refresh="load"
+      />
     </StatePanel>
   </div>
 </template>

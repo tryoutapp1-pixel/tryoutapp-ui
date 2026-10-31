@@ -15,6 +15,7 @@ import { useAuthStore, ROLES } from '../stores/auth'
 import PublicLayout from '../layouts/PublicLayout.vue'
 import UserLayout from '../layouts/UserLayout.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
+import AssessmentLayout from '../layouts/AssessmentLayout.vue'
 
 const routes = [
   {
@@ -43,24 +44,49 @@ const routes = [
       { path: 'subscription', name: 'user-subscription', component: () => import('../views/user/SubscriptionPage.vue') },
       { path: 'transactions', name: 'user-transactions', component: () => import('../views/user/TransactionsPage.vue') },
 
+      // Premium checkout flow (Features 6, 7, 8). Invoice + method selection is
+      // the purchase-preparation stage; payment is the Snap execution stage;
+      // the outcome pages reflect backend/transaction state (never a client-
+      // side Snap callback) after the interaction resolves.
+      { path: 'checkout', name: 'user-checkout', component: () => import('../views/user/CheckoutPage.vue') },
+      { path: 'payment', name: 'user-payment', component: () => import('../views/user/PaymentPage.vue') },
+      { path: 'payment/success', name: 'user-payment-success', component: () => import('../views/user/PaymentSuccessPage.vue') },
+      { path: 'payment/pending', name: 'user-payment-pending', component: () => import('../views/user/PaymentPendingPage.vue') },
+      { path: 'payment/failed', name: 'user-payment-failed', component: () => import('../views/user/PaymentFailedPage.vue') },
+
       // Materials (FU8, FU9)
       { path: 'materials', name: 'user-materials', component: () => import('../views/user/MaterialsListPage.vue') },
       { path: 'materials/:id', name: 'user-material-detail', component: () => import('../views/user/MaterialDetailPage.vue') },
 
-      // Latihan (FU10-FU15) — untimed assessment engine
+      // Latihan (FU10-FU15) — untimed assessment engine.
+      // The ACTIVE attempt route lives under the distraction-free
+      // AssessmentLayout (see /assessment below), not here.
       { path: 'latihan', name: 'user-latihan', component: () => import('../views/user/AssessmentListPage.vue'), meta: { kind: 'latihan' } },
       { path: 'latihan/:id', name: 'user-latihan-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'latihan' } },
-      { path: 'latihan/:id/attempt/:attemptId', name: 'user-latihan-attempt', component: () => import('../views/user/AttemptPage.vue'), meta: { kind: 'latihan' } },
+      { path: 'latihan/:id/history', name: 'user-latihan-history', component: () => import('../views/user/AttemptHistoryPage.vue'), meta: { kind: 'latihan' } },
       { path: 'latihan/:id/attempt/:attemptId/result', name: 'user-latihan-result', component: () => import('../views/user/AttemptResultPage.vue'), meta: { kind: 'latihan' } },
       { path: 'latihan/:id/explanations', name: 'user-latihan-explanations', component: () => import('../views/user/ExplanationsPage.vue'), meta: { kind: 'latihan' } },
 
-      // Try Out (FU16-FU22) — same engine, with a backend-driven timer
+      // Try Out (FU16-FU22) — same engine, with a backend-driven timer.
       { path: 'tryout', name: 'user-tryout', component: () => import('../views/user/AssessmentListPage.vue'), meta: { kind: 'tryout' } },
       { path: 'tryout/statistics', name: 'user-tryout-statistics', component: () => import('../views/user/StatisticsPage.vue') },
       { path: 'tryout/:id', name: 'user-tryout-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'tryout' } },
-      { path: 'tryout/:id/attempt/:attemptId', name: 'user-tryout-attempt', component: () => import('../views/user/AttemptPage.vue'), meta: { kind: 'tryout' } },
+      { path: 'tryout/:id/history', name: 'user-tryout-history', component: () => import('../views/user/AttemptHistoryPage.vue'), meta: { kind: 'tryout' } },
       { path: 'tryout/:id/attempt/:attemptId/result', name: 'user-tryout-result', component: () => import('../views/user/AttemptResultPage.vue'), meta: { kind: 'tryout' } },
       { path: 'tryout/:id/explanations', name: 'user-tryout-explanations', component: () => import('../views/user/ExplanationsPage.vue'), meta: { kind: 'tryout' } }
+    ]
+  },
+  {
+    // Distraction-free active-attempt engine (Feature 5). Same auth/role rules
+    // as the user area, but rendered without the learner nav drawer/app bar.
+    // Direct URL access and refresh work because the attempt state is loaded
+    // fresh from the backend by AttemptPage on mount.
+    path: '/assessment',
+    component: AssessmentLayout,
+    meta: { requiresAuth: true, roles: [ROLES.USER] },
+    children: [
+      { path: 'latihan/:id/attempt/:attemptId', name: 'user-latihan-attempt', component: () => import('../views/user/AttemptPage.vue'), meta: { kind: 'latihan' } },
+      { path: 'tryout/:id/attempt/:attemptId', name: 'user-tryout-attempt', component: () => import('../views/user/AttemptPage.vue'), meta: { kind: 'tryout' } }
     ]
   },
   {

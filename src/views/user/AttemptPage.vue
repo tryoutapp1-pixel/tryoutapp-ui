@@ -76,9 +76,23 @@ async function load() {
   }
 }
 
+function resultRoute() {
+  return {
+    name: `user-${kind.value}-result`,
+    params: { id: assessmentId.value, attemptId: attemptId.value }
+  }
+}
+
 function goToResult() {
   submitted.value = true
-  router.replace(`/app/${kind.value}/${assessmentId.value}/attempt/${attemptId.value}/result`)
+  router.replace(resultRoute())
+}
+
+// Exit back to the assessment detail without finalizing. The onBeforeRouteLeave
+// guard below still prompts and the attempt store is left intact, so saved
+// answers and the server-tracked timer are preserved for later continuation.
+function exitAttempt() {
+  router.push({ name: `user-${kind.value}-detail`, params: { id: assessmentId.value } })
 }
 
 async function onSelect(optionId) {
@@ -123,7 +137,7 @@ async function doSubmit(auto = false) {
       uiStore.success('Your attempt was submitted.')
     }
     // Carry the feedback flag + just-known answers to the result page via store.
-    router.replace(`/app/${kind.value}/${assessmentId.value}/attempt/${attemptId.value}/result`)
+    router.replace(resultRoute())
     void data
   } catch (e) {
     if (e && e.status === 409) {
@@ -170,13 +184,22 @@ onMounted(load)
   <div>
     <StatePanel :loading="loading" :error="error" @retry="load">
       <div v-if="status === 'IN_PROGRESS'">
-        <!-- Top bar: title area + timer -->
+        <!-- Top bar: exit + title area + timer -->
         <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
-          <div>
-            <h1 class="text-h6 font-weight-bold mb-0">
-              {{ kind === 'tryout' ? 'Try Out' : 'Latihan' }}
-            </h1>
-            <span class="text-caption text-medium-emphasis">Attempt #{{ attemptId }}</span>
+          <div class="d-flex align-center ga-2">
+            <v-btn
+              variant="text"
+              icon="mdi-arrow-left"
+              density="comfortable"
+              aria-label="Exit attempt"
+              @click="exitAttempt"
+            />
+            <div>
+              <h1 class="text-h6 font-weight-bold mb-0">
+                {{ kind === 'tryout' ? 'Try Out' : 'Latihan' }}
+              </h1>
+              <span class="text-caption text-medium-emphasis">Attempt #{{ attemptId }}</span>
+            </div>
           </div>
           <AttemptTimer v-if="timed" :remaining="remaining" @expired="onExpired" />
         </div>

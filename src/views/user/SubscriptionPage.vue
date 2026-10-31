@@ -1,16 +1,14 @@
 <script setup>
-// FU2 (a/b/c) + FU6 - Subscription status, Premium offer, and payment.
+// FU2 (a/b/c) + FU6 - Subscription status and Premium offer.
 //
-// Flow:
-//  - Show the authoritative subscription status (FU6). An effective Premium
-//    subscription = status PREMIUM with a future expired_at (the backend already
-//    computes this in GET /users/subscription).
-//  - Show the Premium offer (FU2a) using backend-provided price/duration.
-//  - "Upgrade" creates/reuses a PENDING transaction (FU2b) and opens the
-//    Midtrans Snap popup (FU2c). The backend webhook is authoritative, so after
-//    the popup resolves we re-read subscription + transactions and tell the user
-//    the real state (which may still be pending).
-import { computed, onMounted, ref } from 'vue'
+// Upgrading now routes to the dedicated checkout flow (Feature 6 -> 7 -> 8):
+//   /app/checkout  : invoice summary + payment-method selection
+//   /app/payment   : Midtrans Snap execution
+//   /app/payment/* : success / pending / failed outcomes
+// The backend webhook remains authoritative for Premium activation; this page
+// only shows the current (authoritative) subscription status.
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useSubscriptionStore } from '../../stores/subscription'
 import { useUiStore } from '../../stores/ui'
@@ -18,24 +16,20 @@ import PageHeader from '../../components/PageHeader.vue'
 import StatePanel from '../../components/StatePanel.vue'
 import StatusChip from '../../components/StatusChip.vue'
 import { formatCurrency, formatDateOnly } from '../../lib/format'
-import { isSnapConfigured, payWithSnap } from '../../lib/midtrans'
+import { isSnapConfigured } from '../../lib/midtrans'
 
+const router = useRouter()
 const store = useSubscriptionStore()
 const uiStore = useUiStore()
 const {
-  offer,
   offerLoading,
   offerError,
   subscription,
   subscriptionLoading,
   subscriptionError,
   premiumPlan,
-  isPremium,
-  creatingPayment
+  isPremium
 } = storeToRefs(store)
-
-const lastInvoice = ref(null) // { order_id, amount, status }
-const paying = ref(false)
 
 const loading = computed(() => offerLoading.value || subscriptionLoading.value)
 const error = computed(() => subscriptionError.value || offerError.value)
@@ -51,46 +45,13 @@ function reload() {
   store.fetchOffer()
 }
 
-async function onUpgrade() {
-  if (paying.value || creatingPayment.value) return
+function onUpgrade() {
   if (!isSnapConfigured()) {
     uiStore.error('Online payment is not configured.')
     return
   }
-  paying.value = true
-  try {
-    // FU2b - create/reuse the pending invoice.
-    const invoice = await store.createPayment()
-    // A null result means a creation is already in flight (concurrent-click
-    // guard): quietly stop, do not show an error.
-    if (invoice === null) return
-    if (!invoice || !invoice.snap_token) {
-      uiStore.error('Could not start the payment. Please try again.')
-      return
-    }
-    lastInvoice.value = invoice
-
-    // FU2c - open Snap. The result is informational only.
-    const { outcome } = await payWithSnap(invoice.snap_token)
-
-    // Always re-read authoritative state from the backend.
-    await store.refreshAfterPayment()
-
-    if (isPremium.value) {
-      uiStore.success('Premium is now active. Enjoy!')
-    } else if (outcome === 'success') {
-      uiStore.notify('Payment received. Your Premium access will activate shortly.', 'info')
-    } else if (outcome === 'pending') {
-      uiStore.notify('Your payment is pending. We will update your status once it settles.', 'info')
-    } else if (outcome === 'error') {
-      uiStore.error('The payment could not be completed.')
-    }
-    // 'close' with no change: stay silent; the pending invoice remains reusable.
-  } catch (e) {
-    uiStore.error(e.message)
-  } finally {
-    paying.value = false
-  }
+  // Go to the purchase-preparation (checkout) stage.
+  router.push({ name: 'user-checkout' })
 }
 
 onMounted(reload)
@@ -169,30 +130,14 @@ onMounted(reload)
             </v-list>
 
             <v-btn
-              v-if="!isPremium"
               color="primary"
               variant="flat"
               size="large"
               block
               prepend-icon="mdi-crown"
-              :loading="paying || creatingPayment"
-              :disabled="paying || creatingPayment"
               @click="onUpgrade"
             >
-              Upgrade to Premium
-            </v-btn>
-            <v-btn
-              v-else
-              color="primary"
-              variant="flat"
-              size="large"
-              block
-              prepend-icon="mdi-crown"
-              :loading="paying || creatingPayment"
-              :disabled="paying || creatingPayment"
-              @click="onUpgrade"
-            >
-              Extend Premium
+              {{ isPremium ? 'Extend Premium' : 'Upgrade to Premium' }}
             </v-btn>
 
             <p v-if="!isSnapConfigured()" class="text-caption text-error mt-2 mb-0">
@@ -201,31 +146,6 @@ onMounted(reload)
           </v-card>
         </v-col>
       </v-row>
-
-      <!-- Latest invoice summary (FU2b), shown after a payment attempt. -->
-      <v-card v-if="lastInvoice" variant="outlined" class="pa-6 mt-6" max-width="560">
-        <h3 class="text-subtitle-1 font-weight-bold mb-3">Latest invoice</h3>
-        <v-row class="mb-1">
-          <v-col cols="5" class="text-medium-emphasis">Order ID</v-col>
-          <v-col cols="7" class="font-mono text-body-2">{{ lastInvoice.order_id }}</v-col>
-        </v-row>
-        <v-row class="mb-1">
-          <v-col cols="5" class="text-medium-emphasis">Amount</v-col>
-          <v-col cols="7">{{ formatCurrency(lastInvoice.amount, lastInvoice.currency) }}</v-col>
-        </v-row>
-        <v-row>
-          <v-col cols="5" class="text-medium-emphasis">Status</v-col>
-          <v-col cols="7"><StatusChip :value="lastInvoice.status" /></v-col>
-        </v-row>
-        <v-btn
-          variant="text"
-          to="/app/transactions"
-          append-icon="mdi-arrow-right"
-          class="mt-3 px-0"
-        >
-          View all transactions
-        </v-btn>
-      </v-card>
     </StatePanel>
   </div>
 </template>

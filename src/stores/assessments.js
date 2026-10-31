@@ -39,6 +39,43 @@ export const useAssessmentsStore = defineStore('assessments', {
     // detail page always reflects current attempt/access state.
     async fetchDetail(kind, assessmentId) {
       return userService.getAssessment(kind, assessmentId)
+    },
+
+    // Previous attempts for ONE assessment.
+    //
+    // Backend reality (verified against api/src/services/userApiService.js):
+    //  - Try Out: GET /users/tryout/statistics returns one row per
+    //    COMPLETED/EXPIRED Try Out attempt for the user, including attempt_id
+    //    and assessment_id. We filter to the requested assessment and sort
+    //    newest-first. IN_PROGRESS attempts are NOT included by the backend.
+    //  - Latihan: there is NO endpoint that lists a user's Latihan attempts.
+    //    We therefore return `supported: false` so the UI can render an honest
+    //    notice instead of fabricating history.
+    //
+    // Returns: { supported, items: [{ attempt_id, assessment_id, completed_at,
+    //   total_score, twk_score, tiu_score, tkp_score, status }] }
+    async fetchAttemptHistory(kind, assessmentId) {
+      if (kind !== 'tryout') {
+        return { supported: false, items: [] }
+      }
+      const rows = (await userService.getTryoutStatistics()) || []
+      const items = rows
+        .filter((r) => String(r.assessment_id) === String(assessmentId))
+        .map((r) => ({
+          attempt_id: r.attempt_id,
+          assessment_id: r.assessment_id,
+          assessment_title: r.assessment_title,
+          completed_at: r.completed_at,
+          total_score: Number(r.total_score),
+          twk_score: Number(r.twk_score),
+          tiu_score: Number(r.tiu_score),
+          tkp_score: Number(r.tkp_score),
+          // Statistics only ever contains finalized attempts; the backend does
+          // not distinguish COMPLETED vs EXPIRED here, so we report COMPLETED.
+          status: 'COMPLETED'
+        }))
+        .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at))
+      return { supported: true, items }
     }
   }
 })

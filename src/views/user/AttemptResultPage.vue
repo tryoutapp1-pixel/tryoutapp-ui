@@ -14,6 +14,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAttemptStore } from '../../stores/attempt'
+import { useSubscriptionStore } from '../../stores/subscription'
 import { useUiStore } from '../../stores/ui'
 import userService from '../../services/userService'
 import PageHeader from '../../components/PageHeader.vue'
@@ -24,9 +25,12 @@ import FeedbackDialog from '../../components/assessment/FeedbackDialog.vue'
 const route = useRoute()
 const router = useRouter()
 const store = useAttemptStore()
+const subscriptionStore = useSubscriptionStore()
 const uiStore = useUiStore()
 const { result: storeResult, isFeedback, answers: storeAnswers, assessmentId: storeAssessmentId } =
   storeToRefs(store)
+// Premium status drives the explanations-button copy (Feature 3 / Feature 4).
+const { isPremium } = storeToRefs(subscriptionStore)
 
 const kind = computed(() => route.meta.kind || 'latihan')
 const assessmentId = computed(() => route.params.id)
@@ -79,21 +83,28 @@ async function submitFeedback(payload) {
 }
 
 function viewExplanations() {
-  router.push(`/app/${kind.value}/${assessmentId.value}/explanations`)
+  router.push({
+    name: `user-${kind.value}-explanations`,
+    params: { id: assessmentId.value }
+  })
 }
 
 // Whether to offer the "Give feedback" button: only when we know it's pending
 // (fresh submit, is_feedback === false) and it hasn't been submitted yet.
 const canGiveFeedback = computed(() => isFeedback.value === false && !feedbackDone.value)
 
-onMounted(load)
+onMounted(() => {
+  load()
+  // Keep the Premium gate copy accurate.
+  subscriptionStore.fetchSubscription().catch(() => {})
+})
 </script>
 
 <template>
   <div>
     <PageHeader :title="`${kind === 'tryout' ? 'Try Out' : 'Latihan'} result`">
       <template #actions>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push(`/app/${kind}`)">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: `user-${kind}` }">
           Back to list
         </v-btn>
       </template>
@@ -110,7 +121,7 @@ onMounted(load)
             prepend-icon="mdi-book-open-variant"
             @click="viewExplanations"
           >
-            View explanations
+            {{ isPremium ? 'View explanations' : 'Review answers' }}
           </v-btn>
           <v-btn
             v-if="canGiveFeedback"
@@ -124,7 +135,7 @@ onMounted(load)
           <v-btn
             variant="text"
             prepend-icon="mdi-view-list-outline"
-            @click="router.push(`/app/${kind}/${assessmentId}`)"
+            :to="{ name: `user-${kind}-detail`, params: { id: assessmentId } }"
           >
             Assessment detail
           </v-btn>

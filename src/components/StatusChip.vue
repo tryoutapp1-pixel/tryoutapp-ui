@@ -23,7 +23,9 @@ const COLORS = {
   PENDING: 'warning',
   FAILED: 'error',
   EXPIRED: 'error',
-  CANCELLED: 'grey'
+  CANCELLED: 'grey',
+  COMPLETED: 'success',
+  IN_PROGRESS: 'info'
 }
 
 const label = computed(() => String(props.value).replace("_", " "))
