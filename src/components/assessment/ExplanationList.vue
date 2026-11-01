@@ -69,6 +69,12 @@ function go(i) {
         </div>
 
         <p class="text-body-1 mb-4" style="white-space: pre-line">{{ q.question }}</p>
+        <SignedImage
+          v-if="q.question_image_url"
+          :src="q.question_image_url"
+          :alt="`Explanation ${q.number} image`"
+          @refresh="emit('refresh')"
+        />
 
         <v-list class="mb-4" density="comfortable">
           <v-list-item
@@ -109,6 +115,13 @@ function go(i) {
                 Your answer
               </v-chip>
             </template>
+
+            <SignedImage
+              v-if="opt.image_url"
+              :src="opt.image_url"
+              :alt="`Explanation ${q.number} image`"
+              @refresh="emit('refresh')"
+            />
           </v-list-item>
         </v-list>
 
@@ -130,8 +143,8 @@ function go(i) {
             {{ q.explanation || 'No explanation provided.' }}
           </p>
           <SignedImage
-            v-if="q.attachment && q.attachment.url"
-            :src="q.attachment.url"
+            v-if="q.explanation_image_url"
+            :src="q.explanation_image_url"
             :alt="`Explanation ${q.number} image`"
             @refresh="emit('refresh')"
           />

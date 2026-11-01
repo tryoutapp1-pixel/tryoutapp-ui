@@ -12,6 +12,7 @@ import StatePanel from '../../components/StatePanel.vue'
 import StatusChip from '../../components/StatusChip.vue'
 import QuestionEditDialog from '../../components/admin/QuestionEditDialog.vue'
 import OptionEditDialog from '../../components/admin/OptionEditDialog.vue'
+import SignedImage from '../../components/assessment/SignedImage.vue'
 import { formatDate, isReleased } from '../../lib/format'
 
 const route = useRoute()
@@ -166,7 +167,12 @@ onMounted(load)
                     </v-btn>
                   </div>
 
-                  <v-img v-if="q.question_image_url" :src="q.question_image_url" max-width="320" class="mb-3 rounded" />
+                  <SignedImage
+                    v-if="q.question_image_url"
+                    :src="q.question_image_url"
+                    :alt="`Questions ${q.question_number} image`"
+                    @refresh="emit('refresh')"
+                  />
                   <v-list density="compact">
                     <v-list-item v-for="o in q.options" :key="o.id">
                       <template #prepend>
@@ -176,7 +182,12 @@ onMounted(load)
                         {{ o.option_text }}
                       </v-list-item-title>
                       <v-list-item-media v-if="o.option_image_url">
-                        <v-img :src="o.option_image_url" max-width="320" class="mb-3 align-start rounded" />
+                        <SignedImage
+                          v-if="o.option_image_url"
+                          :src="o.option_image_url"
+                          :alt="`Answer ${q.option_code} image`"
+                          @refresh="emit('refresh')"
+                        />
                       </v-list-item-media>
                       <template #append>
                         <div class="d-flex align-center ga-2">
@@ -196,10 +207,12 @@ onMounted(load)
                     {{ q.explanation }}
                   </v-alert>
                   <div v-if="q.explanation_file_url" class="mt-2">
-                    <v-img v-if="q.explanation_file_url" :src="q.explanation_file_url" max-width="320" class="mb-3 rounded" />
-                    <!-- <a :href="q.explanation_file_url" target="_blank" rel="noopener" class="text-primary text-body-2">
-                      <v-icon icon="mdi-paperclip" size="small" /> Explanation file
-                    </a> -->
+                    <SignedImage
+                      v-if="q.explanation_file_url"
+                      :src="q.explanation_file_url"
+                      :alt="`Explanation ${q.question_number} image`"
+                      @refresh="emit('refresh')"
+                    />
                   </div>
                 </v-expansion-panel-text>
               </v-expansion-panel>
