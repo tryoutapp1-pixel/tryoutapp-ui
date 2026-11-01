@@ -36,24 +36,15 @@ const error = ref('')
 const method = ref('bank_transfer')
 const snapConfigured = isSnapConfigured()
 
-const canPay = computed(
-  () => Boolean(activeInvoice.value && activeInvoice.value.snap_token) && snapConfigured
-)
+// The invoice is created on "Proceed to payment" (not on mount), so the button
+// only needs a configured gateway to be enabled.
+const canPay = computed(() => snapConfigured)
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     if (!offer.value.length) await store.fetchOffer()
-    if (!snapConfigured) {
-      // Still show the summary, but we cannot create a Snap transaction.
-      return
-    }
-    // Ensure a PENDING invoice exists (idempotent on the backend).
-    const invoice = await store.ensureInvoice()
-    if (!invoice || !invoice.snap_token) {
-      error.value = 'Could not prepare your invoice. Please try again.'
-    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -61,9 +52,22 @@ async function load() {
   }
 }
 
-function proceed() {
-  if (!canPay.value) return
-  router.push({ name: 'user-payment' })
+// Create (or reuse) the PENDING invoice here, triggered by the user's explicit
+// action, then move to the dedicated payment page. The backend is idempotent
+// per user, so a repeated click simply returns the same order.
+async function proceed() {
+  if (!canPay.value || creatingPayment.value) return
+  error.value = ''
+  try {
+    const invoice = await store.ensureInvoice()
+    if (!invoice || !invoice.snap_token) {
+      error.value = 'Could not prepare your invoice. Please try again.'
+      return
+    }
+    router.push({ name: 'user-payment' })
+  } catch (e) {
+    error.value = e.message
+  }
 }
 
 onMounted(load)
@@ -104,7 +108,8 @@ onMounted(load)
             block
             class="mt-4"
             prepend-icon="mdi-arrow-right-circle"
-            :disabled="!canPay"
+            :loading="creatingPayment"
+            :disabled="!canPay || creatingPayment"
             @click="proceed"
           >
             Proceed to payment
