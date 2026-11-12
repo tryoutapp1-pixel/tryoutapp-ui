@@ -44,7 +44,7 @@
  * @property {number} price
  * @property {string} currency
  * @property {number} duration_days
- * @property {string} duration_description
+ * @property {string} duration_description - HTML built by the backend, e.g. "tahun <small>(365 hari)</small>"
  */
 
 /**
@@ -184,6 +184,12 @@
  * @property {number} twk_score
  * @property {number} tiu_score
  * @property {number} tkp_score
+ * @property {boolean} twk_passed
+ * @property {boolean} tiu_passed
+ * @property {boolean} tkp_passed
+ * @property {number} total_correct
+ * @property {number} total_wrong
+ * @property {number} total_unanswered
  */
 
 /**

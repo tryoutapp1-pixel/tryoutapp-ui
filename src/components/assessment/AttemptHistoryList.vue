@@ -11,21 +11,24 @@ import AttemptHistoryItem from './AttemptHistoryItem.vue'
  * @property {AttemptHistoryEntry[]} items - Newest first
  * @property {boolean} [loading]
  * @property {string} [error]
+ * @property {boolean} [premium] - Changes the review button label
  */
 
 /** @type {AttemptHistoryListProps} */
 const props = defineProps({
   items: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
-  error: { type: String, default: '' }
+  error: { type: String, default: '' },
+  premium: { type: Boolean, default: false }
 })
 
 /**
  * @typedef {Object} AttemptHistoryListEmits
  * @property {() => void} retry
- * @property {(attempt: AttemptHistoryEntry) => void} view
+ * @property {(attempt: AttemptHistoryEntry) => void} review
+ * @property {(attempt: AttemptHistoryEntry) => void} continue
  */
-const emit = defineEmits(['retry', 'view'])
+const emit = defineEmits(['retry', 'review', 'continue'])
 </script>
 
 <template>
@@ -44,7 +47,9 @@ const emit = defineEmits(['retry', 'view'])
         :key="a.attempt_id"
         :attempt="a"
         :index="props.items.length - i"
-        @view="emit('view', $event)"
+        :premium="props.premium"
+        @review="emit('review', $event)"
+        @continue="emit('continue', $event)"
       />
     </div>
   </StatePanel>

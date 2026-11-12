@@ -144,15 +144,6 @@ export default {
   },
 
   /**
-   * @param {AssessmentKind} kind
-   * @param {number|string} attemptId
-   * @returns {Promise<import('../types/api').AttemptResult>}
-   */
-  async getResult(kind, attemptId) {
-    return getEnvelopeData(await http.get(`/users/${kind}/attempts/${attemptId}/result`))
-  },
-
-  /**
    * Review of a finalized attempt: the latest one, or `attemptId` when given.
    * @param {AssessmentKind} kind
    * @param {number|string} assessmentId

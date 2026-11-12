@@ -13,13 +13,21 @@
 //    and answers come from server state. A Try Out whose deadline has already
 //    passed opens the "Time is up" dialog straight away.
 //  - An attempt that is already finalized (409, or status not IN_PROGRESS)
-//    redirects to the result page.
+//    redirects to the answer review of that attempt.
+//
+// After a successful submit:
+//  - When the backend reports is_feedback === false, the required feedback
+//    dialog opens here. Once feedback is saved (or the backend answers 409
+//    because it already exists) the learner goes to the answer review.
+//  - Otherwise the learner goes straight to the answer review.
 import { computed, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAttemptStore } from '../../stores/attempt'
 import { useUiStore } from '../../stores/ui'
+import userService from '../../services/userService'
 import StatePanel from '../../components/StatePanel.vue'
+import FeedbackDialog from '../../components/assessment/FeedbackDialog.vue'
 import QuestionNavigator from '../../components/assessment/QuestionNavigator.vue'
 import QuestionCard from '../../components/assessment/QuestionCard.vue'
 import AttemptProgress from '../../components/assessment/AttemptProgress.vue'
@@ -66,34 +74,56 @@ const answeringLocked = computed(() => submitting.value || timeUpOpen.value)
 /** Explicit closure so the timer is not coupled to Pinia's action binding. */
 const remaining = () => store.remainingSeconds()
 
+const feedbackOpen = ref(false)
+const feedbackSubmitting = ref(false)
+
 async function load() {
   try {
     await store.loadAttempt(attemptId.value, { kind: kind.value })
-    if (status.value && status.value !== 'IN_PROGRESS') goToResult()
+    if (status.value && status.value !== 'IN_PROGRESS') goToExplanations()
   } catch (e) {
     // 409 means the attempt is already finalized. Other errors are shown by StatePanel.
-    if (e && e.status === 409) goToResult()
+    if (e && e.status === 409) goToExplanations()
   }
 }
 
-function resultRoute() {
-  return {
-    name: `user-${kind.value}-result`,
-    params: { id: assessmentId.value, attemptId: attemptId.value }
-  }
-}
-
-function goToResult() {
+/** Replaces the attempt page with the answer review of this attempt. */
+function goToExplanations() {
   submitted.value = true
-  router.replace(resultRoute())
+  router.replace({
+    name: `user-${kind.value}-explanations`,
+    params: { id: assessmentId.value },
+    query: { attempt: String(attemptId.value) }
+  })
 }
 
 /**
- * Back to the assessment detail without submitting. Saved answers and the
- * server-side timer are kept, so the learner can continue later.
+ * Saves feedback. The dialog closes and the learner moves on to the answer
+ * review on success, or on 409 when feedback for this assessment already
+ * exists. Any other error keeps the dialog open for a retry.
+ * @param {import('../../types/api').FeedbackPayload} payload
  */
-function exitAttempt() {
-  router.push({ name: `user-${kind.value}-detail`, params: { id: assessmentId.value } })
+async function submitFeedback(payload) {
+  if (feedbackSubmitting.value) return
+  feedbackSubmitting.value = true
+  try {
+    await userService.submitFeedback(assessmentId.value, payload)
+    store.isFeedback = true
+    feedbackOpen.value = false
+    uiStore.success('Thanks for your feedback.')
+    goToExplanations()
+  } catch (e) {
+    if (e && e.status === 409) {
+      store.isFeedback = true
+      feedbackOpen.value = false
+      uiStore.notify('You have already sent feedback for this assessment.', 'info')
+      goToExplanations()
+    } else {
+      uiStore.error(e.message)
+    }
+  } finally {
+    feedbackSubmitting.value = false
+  }
 }
 
 /** @param {number} optionId */
@@ -132,14 +162,20 @@ async function doSubmit() {
   confirmOpen.value = false
   timeUpError.value = ''
   try {
-    await store.submit()
+    const data = await store.submit()
     submitted.value = true
+    timeUpOpen.value = false
     uiStore.success('Your attempt was submitted.')
-    router.replace(resultRoute())
+    if (data && data.is_feedback === false) {
+      // Feedback is required before moving on to the answer review.
+      feedbackOpen.value = true
+      return
+    }
+    goToExplanations()
   } catch (e) {
     if (e && e.status === 409) {
-      // Already finalized elsewhere; show the result.
-      goToResult()
+      // Already finalized elsewhere; show its answer review.
+      goToExplanations()
       return
     }
     if (timeUpOpen.value) timeUpError.value = e.message
@@ -171,9 +207,7 @@ onBeforeRouteLeave(() => {
   return true
 })
 
-// The attempt store is intentionally not reset on unmount: the result page
-// reads the just-produced result and the is_feedback flag from it. The store
-// resets itself when a different attempt is loaded.
+// The attempt store resets itself when a different attempt is loaded.
 onMounted(load)
 </script>
 
@@ -182,20 +216,11 @@ onMounted(load)
     <StatePanel :loading="loading" :error="error" @retry="load">
       <div v-if="status === 'IN_PROGRESS'">
         <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
-          <div class="d-flex align-center ga-2">
-            <v-btn
-              variant="text"
-              icon="mdi-arrow-left"
-              density="comfortable"
-              aria-label="Exit attempt"
-              @click="exitAttempt"
-            />
-            <div>
-              <h1 class="text-h6 font-weight-bold mb-0">
-                {{ kind === 'tryout' ? 'Try Out' : 'Latihan' }}
-              </h1>
-              <span class="text-caption text-medium-emphasis">Attempt #{{ attemptId }}</span>
-            </div>
+          <div>
+            <h1 class="text-h6 font-weight-bold mb-0">
+              {{ kind === 'tryout' ? 'Try Out' : 'Latihan' }}
+            </h1>
+            <span class="text-caption text-medium-emphasis">Attempt #{{ attemptId }}</span>
           </div>
           <AttemptTimer v-if="timed" :remaining="remaining" @expired="onExpired" />
         </div>
@@ -270,6 +295,13 @@ onMounted(load)
           </v-col>
         </v-row>
       </div>
+      <v-card v-else-if="feedbackOpen" variant="outlined" class="pa-8 text-center">
+        <v-icon icon="mdi-check-circle-outline" color="success" size="48" class="mb-3" />
+        <div class="text-h6 font-weight-bold">Attempt submitted</div>
+        <p class="text-body-2 text-medium-emphasis mb-0">
+          Share your feedback to continue to the answer review.
+        </p>
+      </v-card>
     </StatePanel>
 
     <ConfirmDialog
@@ -290,5 +322,7 @@ onMounted(load)
       :error="timeUpError"
       @submit="doSubmit"
     />
+
+    <FeedbackDialog :model-value="feedbackOpen" :submitting="feedbackSubmitting" @submit="submitFeedback" />
   </div>
 </template>

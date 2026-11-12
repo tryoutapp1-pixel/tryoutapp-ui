@@ -4,7 +4,8 @@
 // answers, the correct answers (TWK/TIU), and option scores to every user, and
 // the written explanation to Premium users only.
 //
-// `?attempt=<id>` reviews that attempt (e.g. from a result page); without it
+// `?attempt=<id>` reviews that attempt (from attempt history, or right after
+// submitting); without it
 // the backend uses the learner's latest finalized attempt.
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -60,7 +61,7 @@ onMounted(() => load())
       :subtitle="attemptId ? `Attempt #${attemptId}` : 'Your latest attempt'"
     >
       <template #actions>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: `user-${kind}-detail`, params: { id: assessmentId } }">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: `user-${kind}-history`, params: { id: assessmentId } }">
           Back
         </v-btn>
       </template>

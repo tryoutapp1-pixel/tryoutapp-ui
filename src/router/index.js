@@ -75,7 +75,6 @@ const routes = [
       { path: 'latihan', name: 'user-latihan', component: () => import('../views/user/AssessmentListPage.vue'), meta: { kind: 'latihan' } },
       { path: 'latihan/:id', name: 'user-latihan-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'latihan' } },
       { path: 'latihan/:id/history', name: 'user-latihan-history', component: () => import('../views/user/AttemptHistoryPage.vue'), meta: { kind: 'latihan' } },
-      { path: 'latihan/:id/attempt/:attemptId/result', name: 'user-latihan-result', component: () => import('../views/user/AttemptResultPage.vue'), meta: { kind: 'latihan' } },
       { path: 'latihan/:id/explanations', name: 'user-latihan-explanations', component: () => import('../views/user/ExplanationsPage.vue'), meta: { kind: 'latihan' } },
 
       // Try Out (FU16-FU22) — same engine, with a backend-driven timer.
@@ -84,7 +83,6 @@ const routes = [
       { path: 'tryout/statistics', name: 'user-tryout-statistics', component: () => import('../views/user/StatisticsPage.vue') },
       { path: 'tryout/:id', name: 'user-tryout-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'tryout' } },
       { path: 'tryout/:id/history', name: 'user-tryout-history', component: () => import('../views/user/AttemptHistoryPage.vue'), meta: { kind: 'tryout' } },
-      { path: 'tryout/:id/attempt/:attemptId/result', name: 'user-tryout-result', component: () => import('../views/user/AttemptResultPage.vue'), meta: { kind: 'tryout' } },
       { path: 'tryout/:id/explanations', name: 'user-tryout-explanations', component: () => import('../views/user/ExplanationsPage.vue'), meta: { kind: 'tryout' } }
     ]
   },

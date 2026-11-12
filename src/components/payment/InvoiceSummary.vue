@@ -31,9 +31,8 @@ const props = defineProps({
       <v-icon icon="mdi-crown-outline" color="amber" />
       <div>
         <div class="font-weight-medium">{{ plan ? plan.title : 'Tryout App Premium' }}</div>
-        <div v-if="plan" class="text-caption text-medium-emphasis">
-          {{ plan.duration_description }}
-        </div>
+        <!-- duration_description is backend-built HTML, e.g. "tahun <small>(365 hari)</small>". -->
+        <div v-if="plan" class="text-caption text-medium-emphasis" v-html="plan.duration_description" />
       </div>
     </div>
 

@@ -118,7 +118,7 @@ onMounted(reload)
                 {{ formatCurrency(premiumPlan.price, premiumPlan.currency) }}
               </span>
               <span class="text-body-2 text-medium-emphasis">
-                / {{ premiumPlan.duration_description }}
+                / <span v-html="premiumPlan.duration_description" />
               </span>
             </div>
 
