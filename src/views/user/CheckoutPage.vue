@@ -1,14 +1,14 @@
 <script setup>
-// Feature 6 - Invoice + payment method selection (purchase preparation stage).
+// Feature 6 - invoice and payment method selection (purchase preparation).
 //
-// One page combining the purchase summary (from the Premium offer + the created
-// invoice) and a payment-method preview. This is NOT the payment execution
-// screen — "Proceed to payment" routes to the dedicated PaymentPage.
+// One page with the purchase summary (from the Premium offer and the invoice)
+// and a payment-method preview. This is NOT the payment execution screen;
+// "Proceed to payment" routes to the dedicated PaymentPage.
 //
 // Backend workflow (verified):
 //  - POST /users/premium/payment creates OR reuses a PENDING transaction and
 //    returns { order_id, transaction_id, snap_token, amount, currency, status }.
-//    It is idempotent per user, so entering this page simply ensures one exists.
+//    It is idempotent per user, so a repeated request returns the same order.
 //  - The backend accepts no payment-method parameter; Midtrans Snap presents the
 //    actual channels. The selection here is a preview (see PaymentMethodSelect).
 //

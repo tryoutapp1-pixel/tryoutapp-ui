@@ -1,7 +1,7 @@
 <script setup>
-// Learner dashboard. Greets the user from shared profile/auth state and links
-// to the main learner areas. Subscription status is loaded lazily and shown as
-// a badge; the full subscription page is a later feature stage.
+// Learner dashboard. Greets the user from shared profile and auth state and
+// links to the main learner areas. Subscription status loads on mount and
+// shows as a plan badge in the header.
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../../stores/auth'
@@ -16,6 +16,15 @@ const subscriptionStore = useSubscriptionStore()
 const { user } = storeToRefs(authStore)
 const { subscription } = storeToRefs(subscriptionStore)
 
+/**
+ * @typedef {Object} DashboardCard
+ * @property {string} title
+ * @property {string} text - One-line description
+ * @property {string} to - Route path; also used as the list key
+ * @property {string} icon - MDI icon name
+ */
+
+/** @type {DashboardCard[]} */
 const cards = [
   { title: 'Materials', text: 'Read released learning materials.', to: '/app/materials', icon: 'mdi-book-open-page-variant-outline' },
   { title: 'Latihan', text: 'Untimed practice assessments.', to: '/app/latihan', icon: 'mdi-pencil-outline' },

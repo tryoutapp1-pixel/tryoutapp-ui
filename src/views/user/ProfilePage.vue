@@ -1,7 +1,7 @@
 <script setup>
-// Profile view + edit (FU3 / FU4). Reads from the profile store (shared across
-// pages) and updates via its action, which also refreshes the auth store user
-// so the nav menu never shows a stale name.
+// Profile view and edit (FU3 / FU4). Reads from the profile store, which is
+// shared across pages, and updates through its action. That action also
+// refreshes the auth store user so the nav menu never shows a stale name.
 import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useForm } from 'vee-validate'
@@ -18,6 +18,7 @@ const { profile, loading, saving } = storeToRefs(profileStore)
 
 const loadError = ref('')
 const editing = ref(false)
+/** @type {import('vue').Ref<import('../../lib/apiError').FieldErrors>} */
 const fieldErrors = ref({})
 
 const { handleSubmit, setFieldValue } = useForm({ initialValues: { name: '' } })

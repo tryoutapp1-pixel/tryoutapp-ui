@@ -10,23 +10,54 @@
 //   VITE_MIDTRANS_CLIENT_KEY  (required to open Snap)
 //   VITE_MIDTRANS_IS_PRODUCTION ('true' | 'false', default sandbox)
 
+/**
+ * Callbacks accepted by `window.snap.pay`. Only the ones this module uses.
+ * @typedef {Object} SnapPayOptions
+ * @property {(payload: unknown) => void} onSuccess
+ * @property {(payload: unknown) => void} onPending
+ * @property {(payload: unknown) => void} onError
+ * @property {() => void} onClose
+ */
+
+/**
+ * The subset of the global Snap.js object this module uses.
+ * @typedef {Object} Snap
+ * @property {(snapToken: string, options: SnapPayOptions) => void} pay
+ */
+
+/** @typedef {'success'|'pending'|'error'|'close'} SnapOutcome */
+
+/**
+ * @typedef {Object} SnapResult
+ * @property {SnapOutcome} outcome - 'close' means the user dismissed the popup
+ * @property {unknown} payload - Raw Midtrans callback payload; null on close
+ */
+
 const SANDBOX_URL = 'https://app.sandbox.midtrans.com/snap/snap.js'
 const PRODUCTION_URL = 'https://app.midtrans.com/snap/snap.js'
 
+/** @type {Promise<Snap>|null} */
 let loadPromise = null
 
+/** @returns {string} */
 function clientKey() {
   return (import.meta.env.VITE_MIDTRANS_CLIENT_KEY || '').trim()
 }
+
+/** @returns {boolean} */
 function isProduction() {
   return String(import.meta.env.VITE_MIDTRANS_IS_PRODUCTION || 'false').trim() === 'true'
 }
 
+/** @returns {boolean} True when a Midtrans client key is set */
 export function isSnapConfigured() {
   return Boolean(clientKey())
 }
 
-// Injects snap.js once and resolves when window.snap is available.
+/**
+ * Injects snap.js once and resolves when window.snap is available.
+ * @returns {Promise<Snap>}
+ */
 export function loadSnap() {
   if (typeof window !== 'undefined' && window.snap) return Promise.resolve(window.snap)
   if (loadPromise) return loadPromise
@@ -56,13 +87,20 @@ export function loadSnap() {
   return loadPromise
 }
 
-// Opens the Snap popup for a token. Resolves with a normalized outcome:
-//   { outcome: 'success'|'pending'|'error'|'close', payload }
-// 'close' means the user dismissed the popup without a terminal result.
+/**
+ * Opens the Snap popup for a token and resolves with a normalized outcome.
+ * The promise settles once, on the first callback Snap fires.
+ * @param {string} snapToken
+ * @returns {Promise<SnapResult>}
+ */
 export async function payWithSnap(snapToken) {
   const snap = await loadSnap()
   return new Promise((resolve) => {
     let settled = false
+    /**
+     * @param {SnapOutcome} outcome
+     * @param {unknown} payload
+     */
     const done = (outcome, payload) => {
       if (settled) return
       settled = true

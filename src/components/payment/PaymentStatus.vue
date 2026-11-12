@@ -4,22 +4,32 @@
 // Shows a headline state (success / pending / failed / processing) with the
 // order info that is available. It reflects backend/transaction state passed in
 // by the parent; it never decides a payment is successful on its own. The
-// Midtrans webhook (backend-to-backend) is the only authority for activation —
+// Midtrans webhook (backend-to-backend) is the only authority for activation;
 // the frontend only displays what the transaction API reports.
 import StatusChip from '../StatusChip.vue'
 import { formatCurrency, formatDate } from '../../lib/format'
 
-defineProps({
-  // 'success' | 'pending' | 'failed' | 'processing'
+/** @typedef {'success'|'pending'|'failed'|'processing'} PaymentState */
+
+/**
+ * @typedef {Object} PaymentStatusProps
+ * @property {PaymentState} [state] - Headline state; unknown values fall back to 'processing'
+ * @property {string} [title]
+ * @property {string} [message]
+ * @property {import('../../types/api').Invoice|null} [invoice] - Optional created invoice
+ * @property {import('../../types/api').Transaction|null} [transaction] - Authoritative transaction row, if resolved
+ */
+
+/** @type {PaymentStatusProps} */
+const props = defineProps({
   state: { type: String, default: 'processing' },
   title: { type: String, default: '' },
   message: { type: String, default: '' },
-  // Optional invoice { order_id, amount, currency } and the authoritative
-  // transaction row { status, payment_method, updated_at } if resolved.
   invoice: { type: Object, default: null },
   transaction: { type: Object, default: null }
 })
 
+/** @type {Record<PaymentState, { icon: string, color: string }>} */
 const VISUALS = {
   success: { icon: 'mdi-check-circle', color: 'success' },
   pending: { icon: 'mdi-clock-outline', color: 'warning' },

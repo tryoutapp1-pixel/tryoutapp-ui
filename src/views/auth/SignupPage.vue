@@ -1,10 +1,10 @@
 <script setup>
 // Signup page (FU1).
 //
-// Signup does NOT authenticate. Backend creates a PENDING_VERIFICATION account
-// and emails a verification link. If the request fails, we keep the safe form
-// values (name/email) so the user can retry; passwords are cleared and never
-// persisted. @submit.prevent prevents any credential from entering the URL.
+// Signup does NOT authenticate. The backend creates a PENDING_VERIFICATION
+// account and emails a verification link. If the request fails, the safe form
+// values (name, email) are kept so the user can retry; the password is cleared
+// and never persisted. @submit.prevent keeps credentials out of the URL.
 import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import authService from '../../services/authService'
@@ -16,6 +16,7 @@ const submitting = ref(false)
 const formError = ref('')
 const done = ref(false)
 const submittedEmail = ref('')
+/** @type {import('vue').Ref<import('../../lib/apiError').FieldErrors>} */
 const fieldErrors = ref({})
 
 const { handleSubmit, resetField } = useForm({

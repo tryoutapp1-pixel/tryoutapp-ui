@@ -13,11 +13,23 @@
 // account. It is presentational only and does not get sent to the backend.
 import { computed } from 'vue'
 
+/**
+ * @typedef {Object} PaymentMethodSelectProps
+ * @property {string} [modelValue] - Selected method value (v-model)
+ */
+
+/** @type {PaymentMethodSelectProps} */
 const props = defineProps({
   modelValue: { type: String, default: '' }
 })
+
+/**
+ * @typedef {Object} PaymentMethodSelectEmits
+ * @property {(value: string) => void} update:modelValue
+ */
 const emit = defineEmits(['update:modelValue'])
 
+/** @type {{ value: string, title: string, icon: string }[]} */
 const methods = [
   { value: 'bank_transfer', title: 'Bank Transfer / Virtual Account', icon: 'mdi-bank-outline' },
   { value: 'gopay', title: 'GoPay / QRIS', icon: 'mdi-qrcode' },
@@ -25,8 +37,10 @@ const methods = [
   { value: 'other', title: 'Other channels', icon: 'mdi-dots-horizontal-circle-outline' }
 ]
 
+/** @type {import('vue').WritableComputedRef<string>} */
 const selected = computed({
   get: () => props.modelValue,
+  /** @param {string} v */
   set: (v) => emit('update:modelValue', v)
 })
 </script>

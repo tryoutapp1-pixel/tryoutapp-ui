@@ -1,9 +1,9 @@
 <script setup>
-// Assessment detail + its question package (if any).
-// - If no package exists, offer the upload/builder page.
-// - If a package exists, show questions/options read-only. Business rule: a
-//   released assessment must be unreleased before uploading a NEW package; this
-//   page does not try to re-upload, it only displays and links to edit.
+// Admin assessment detail plus its question package, if any.
+// - With no package, offer the upload (Excel) page.
+// - With a package, show its questions and options; each question and option
+//   can be edited in a dialog. Business rule: a released assessment must be
+//   unreleased before a new package is uploaded. This page never re-uploads.
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import adminService from '../../services/adminService'
@@ -15,10 +15,42 @@ import OptionEditDialog from '../../components/admin/OptionEditDialog.vue'
 import SignedImage from '../../components/assessment/SignedImage.vue'
 import { formatDate, isReleased } from '../../lib/format'
 
+/**
+ * @typedef {import('../../types/api').AssessmentDetail & {
+ *   is_released?: number|boolean,
+ *   question_package: { question_count: number, created_at: string }|null
+ * }} AdminAssessment
+ */
+
+/**
+ * @typedef {Object} AdminOption
+ * @property {number} id
+ * @property {string} option_code
+ * @property {string} option_text
+ * @property {string|null} option_image_url
+ * @property {number} score
+ */
+
+/**
+ * @typedef {Object} AdminQuestion
+ * @property {number} id
+ * @property {number} question_number
+ * @property {import('../../types/api').SectionType} question_type
+ * @property {string} question_text
+ * @property {string|null} question_image_url
+ * @property {string|null} explanation
+ * @property {string|null} explanation_file_url
+ * @property {AdminOption[]} options
+ */
+
+/** @typedef {{ questions: AdminQuestion[] }} QuestionPackage */
+
 const route = useRoute()
 const router = useRouter()
 
+/** @type {import('vue').Ref<AdminAssessment|null>} */
 const assessment = ref(null)
+/** @type {import('vue').Ref<QuestionPackage|null>} */
 const pkg = ref(null)
 const loading = ref(false)
 const error = ref('')
@@ -52,7 +84,10 @@ async function reloadPackage() {
 
 // Question edit dialog
 const questionDialog = ref(false)
+/** @type {import('vue').Ref<AdminQuestion|null>} */
 const editingQuestion = ref(null)
+
+/** @param {AdminQuestion} q */
 function openQuestionEdit(q) {
   editingQuestion.value = q
   questionDialog.value = true
@@ -60,8 +95,15 @@ function openQuestionEdit(q) {
 
 // Option edit dialog
 const optionDialog = ref(false)
+/** @type {import('vue').Ref<AdminOption|null>} */
 const editingOption = ref(null)
+/** @type {import('vue').Ref<number|null>} */
 const editingOptionQuestionId = ref(null)
+
+/**
+ * @param {AdminQuestion} question - The question that owns the option
+ * @param {AdminOption} option
+ */
 function openOptionEdit(question, option) {
   editingOptionQuestionId.value = question.id
   editingOption.value = option
@@ -170,8 +212,8 @@ onMounted(load)
                   <SignedImage
                     v-if="q.question_image_url"
                     :src="q.question_image_url"
-                    :alt="`Questions ${q.question_number} image`"
-                    @refresh="emit('refresh')"
+                    :alt="`Question ${q.question_number} image`"
+                    @refresh="reloadPackage"
                   />
                   <v-list density="compact">
                     <v-list-item v-for="o in q.options" :key="o.id">
@@ -185,8 +227,8 @@ onMounted(load)
                         <SignedImage
                           v-if="o.option_image_url"
                           :src="o.option_image_url"
-                          :alt="`Answer ${q.option_code} image`"
-                          @refresh="emit('refresh')"
+                          :alt="`Option ${o.option_code} image`"
+                          @refresh="reloadPackage"
                         />
                       </v-list-item-media>
                       <template #append>
@@ -211,7 +253,7 @@ onMounted(load)
                       v-if="q.explanation_file_url"
                       :src="q.explanation_file_url"
                       :alt="`Explanation ${q.question_number} image`"
-                      @refresh="emit('refresh')"
+                      @refresh="reloadPackage"
                     />
                   </div>
                 </v-expansion-panel-text>

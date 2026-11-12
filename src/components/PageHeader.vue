@@ -1,6 +1,14 @@
 <script setup>
 // Reusable page header with title, optional subtitle, and an actions slot.
-defineProps({
+
+/**
+ * @typedef {Object} PageHeaderProps
+ * @property {string} title - Page heading
+ * @property {string} [subtitle] - Optional line under the heading
+ */
+
+/** @type {PageHeaderProps} */
+const props = defineProps({
   title: { type: String, required: true },
   subtitle: { type: String, default: '' }
 })

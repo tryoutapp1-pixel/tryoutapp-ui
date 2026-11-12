@@ -1,5 +1,5 @@
 <script setup>
-// Feature 8 - Payment success page.
+// Feature 8 - payment success page.
 //
 // Reached after a payment interaction resolved favorably OR when the
 // subscription already reads PREMIUM. We do NOT assume success just because the
@@ -37,8 +37,9 @@ async function load() {
   }
 }
 
-// If Premium is active we celebrate; otherwise the payment is confirmed-ish but
-// activation is still catching up, so we present it as pending-settlement.
+// If Premium is active, show success. Otherwise the payment was received but
+// activation has not caught up yet, so present it as pending settlement.
+/** @type {import('vue').ComputedRef<'success'|'pending'>} */
 const state = computed(() => (isPremium.value ? 'success' : 'pending'))
 const title = computed(() =>
   isPremium.value ? 'Premium is active' : 'Payment received'

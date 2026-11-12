@@ -1,6 +1,8 @@
 <script setup>
+// 403 page. The dashboard button goes to the home route for the current role.
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '../../stores/auth'
+
 const authStore = useAuthStore()
 const { homeRoute } = storeToRefs(authStore)
 </script>

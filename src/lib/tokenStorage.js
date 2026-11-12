@@ -7,6 +7,7 @@
 
 const TOKEN_KEY = 'tryout.accessToken'
 
+/** @returns {Storage|null} sessionStorage, or null when the browser blocks it */
 function safeStorage() {
   try {
     return window.sessionStorage
@@ -15,6 +16,7 @@ function safeStorage() {
   }
 }
 
+/** @returns {string|null} The stored access token, or null */
 export function getToken() {
   const storage = safeStorage()
   if (!storage) return null
@@ -25,6 +27,11 @@ export function getToken() {
   }
 }
 
+/**
+ * Stores the token, or removes it when `token` is empty. Write failures are
+ * ignored.
+ * @param {string|null|undefined} token
+ */
 export function setToken(token) {
   const storage = safeStorage()
   if (!storage) return

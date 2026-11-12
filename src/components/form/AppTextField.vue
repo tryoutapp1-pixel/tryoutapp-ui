@@ -5,6 +5,17 @@
 import { toRef, watch } from 'vue'
 import { useField } from 'vee-validate'
 
+/**
+ * @typedef {Object} AppTextFieldProps
+ * @property {string} name - vee-validate field name
+ * @property {string} [label]
+ * @property {string} [type] - Input type
+ * @property {Function|Object|string} [rules] - vee-validate rules
+ * @property {string} [autocomplete]
+ * @property {string} [serverError] - Server-side error shown until the user edits the field
+ */
+
+/** @type {AppTextFieldProps} */
 const props = defineProps({
   name: { type: String, required: true },
   label: { type: String, default: '' },

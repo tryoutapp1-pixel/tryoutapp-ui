@@ -11,10 +11,56 @@ import adminService from '../../services/adminService'
 import { useUiStore } from '../../stores/ui'
 import { QUESTION_TYPES } from '../../lib/questionExcel'
 
+/** @typedef {import('../../types/api').SectionType} SectionType */
+
+/**
+ * Admin view of a question, as returned by the admin question endpoints.
+ * @typedef {Object} AdminQuestion
+ * @property {number} id
+ * @property {string} [question_text]
+ * @property {SectionType} [question_type]
+ * @property {string|null} [explanation]
+ * @property {number|null} [image_attachment_id]
+ * @property {number|null} [explanation_attachment_id]
+ */
+
+/**
+ * Editable form state. Inputs keep ids as strings.
+ * @typedef {Object} QuestionForm
+ * @property {string} question_text
+ * @property {SectionType} question_type
+ * @property {string} explanation
+ * @property {string} image_attachment_id - Empty string means no image
+ * @property {string} explanation_attachment_id - Empty string means no file
+ */
+
+/**
+ * PATCH body with only the changed fields.
+ * @typedef {Object} QuestionPatch
+ * @property {string} [question_text]
+ * @property {SectionType} [question_type]
+ * @property {string|null} [explanation]
+ * @property {number|null} [image_attachment_id] - NaN when the input is invalid
+ * @property {number|null} [explanation_attachment_id] - NaN when the input is invalid
+ */
+
+/**
+ * @typedef {Object} QuestionEditDialogProps
+ * @property {boolean} modelValue - Dialog visibility (v-model)
+ * @property {AdminQuestion|null} [question] - Question being edited
+ */
+
+/** @type {QuestionEditDialogProps} */
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   question: { type: Object, default: null }
 })
+
+/**
+ * @typedef {Object} QuestionEditDialogEmits
+ * @property {(value: boolean) => void} update:modelValue
+ * @property {(question: AdminQuestion) => void} saved - The updated question from the backend
+ */
 const emit = defineEmits(['update:modelValue', 'saved'])
 
 const uiStore = useUiStore()
@@ -22,6 +68,7 @@ const saving = ref(false)
 const formError = ref('')
 
 // Local editable copy. We keep ids as strings in the inputs and normalize later.
+/** @type {import('vue').Ref<QuestionForm>} */
 const form = ref({
   question_text: '',
   question_type: 'TWK',
@@ -30,6 +77,7 @@ const form = ref({
   explanation_attachment_id: ''
 })
 
+/** @type {import('vue').Ref<QuestionForm|null>} */
 const original = ref(null)
 
 watch(
@@ -54,6 +102,11 @@ function close() {
   emit('update:modelValue', false)
 }
 
+/**
+ * Normalizes an attachment id input.
+ * @param {string|number|null|undefined} v - Raw input value
+ * @returns {number|null} The id, null when empty, or NaN when not a positive integer
+ */
 function idOrNull(v) {
   if (v === '' || v === null || v === undefined) return null
   const n = Number(v)
@@ -61,7 +114,9 @@ function idOrNull(v) {
 }
 
 // Build a payload containing only fields the admin actually changed.
+/** @type {import('vue').ComputedRef<QuestionPatch>} */
 const changedPayload = computed(() => {
+  /** @type {QuestionPatch} */
   const payload = {}
   const o = original.value || {}
   if (form.value.question_text !== o.question_text) payload.question_text = form.value.question_text.trim()
@@ -74,6 +129,7 @@ const changedPayload = computed(() => {
   return payload
 })
 
+/** @returns {Promise<void>} */
 async function save() {
   formError.value = ''
   const payload = changedPayload.value

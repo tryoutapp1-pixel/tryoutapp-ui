@@ -7,6 +7,7 @@ import { vuetify } from './plugins/vuetify'
 import { onInvalidSession } from './lib/api'
 import { useAuthStore } from './stores/auth'
 import { useProfileStore } from './stores/profile'
+import { useSubscriptionStore } from './stores/subscription'
 
 import './style.css'
 
@@ -18,12 +19,13 @@ app.use(router)
 app.use(vuetify)
 
 // Bridge the Axios invalid-session signal (401 with a stored token) to app
-// state: clear auth/profile and send a protected current route to login.
+// state: clear auth, profile, and subscription, and send a protected route to login.
 onInvalidSession(() => {
   const authStore = useAuthStore()
   const profileStore = useProfileStore()
   authStore.handleInvalidSession()
   profileStore.reset()
+  useSubscriptionStore().$reset()
   const current = router.currentRoute.value
   if (current.matched.some((r) => r.meta.requiresAuth)) {
     router.replace({ path: '/login', query: { redirect: current.fullPath } })

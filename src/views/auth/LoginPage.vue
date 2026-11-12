@@ -25,7 +25,11 @@ const { handleSubmit } = useForm({
   initialValues: { email: '', password: '' }
 })
 
-// Only accept an internal, rooted redirect target to avoid open-redirect abuse.
+/**
+ * Accepts only an internal, rooted redirect target to prevent open redirects.
+ * @param {unknown} target - Usually `route.query.redirect`
+ * @returns {string|null} The target path, or null when it is unsafe
+ */
 function safeRedirect(target) {
   if (typeof target !== 'string') return null
   if (!target.startsWith('/') || target.startsWith('//') || target.includes('\\')) return null

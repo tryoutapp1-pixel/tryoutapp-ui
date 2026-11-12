@@ -2,9 +2,9 @@
 // Email verification page.
 //
 // The verification email links to {FRONTEND_URL}/verify-email?token=...
-// The token query param is a required integration callback (not sensitive form
-// data), so reading it from the URL is correct. This page calls the backend
-// verification endpoint and handles success / invalid / expired responses.
+// The token query param is a required integration callback, not sensitive form
+// data, so reading it from the URL is correct. This page calls the backend
+// verification endpoint and handles success, invalid, and expired responses.
 // When no token is present, it shows the resend-verification form instead.
 import { ref, onMounted } from 'vue'
 import { useForm } from 'vee-validate'
@@ -15,8 +15,11 @@ import AppTextField from '../../components/form/AppTextField.vue'
 
 const route = useRoute()
 
+/** @typedef {'idle'|'verifying'|'success'|'failed'} VerifyStatus */
+
 const token = ref('')
-const status = ref('idle') // idle | verifying | success | failed
+/** @type {import('vue').Ref<VerifyStatus>} */
+const status = ref('idle')
 const message = ref('')
 
 async function verify() {

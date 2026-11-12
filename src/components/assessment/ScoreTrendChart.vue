@@ -1,12 +1,42 @@
 <script setup>
-// Lightweight SVG line chart for Try Out total-score history (FU16). No chart
-// library dependency — the data set is small (one point per completed attempt)
-// and a simple inline SVG keeps the bundle lean, matching the project's
-// "avoid unnecessary dependencies" rule.
+// Lightweight SVG line chart for Try Out total-score history (FU16). It uses no
+// chart library: the data set is small (one point per completed attempt) and a
+// simple inline SVG keeps the bundle lean, matching the project's "avoid
+// unnecessary dependencies" rule.
 import { computed } from 'vue'
 
+/**
+ * @typedef {Object} TrendPoint
+ * @property {string} label
+ * @property {number|string} value
+ */
+
+/**
+ * @typedef {Object} ChartCoord
+ * @property {number} x
+ * @property {number} y
+ * @property {string} label
+ * @property {number|string} value
+ */
+
+/**
+ * @typedef {Object} ChartGeometry
+ * @property {ChartCoord[]} coords
+ * @property {string} line - SVG path data
+ * @property {number} maxV
+ * @property {number} minV
+ * @property {number} innerH
+ */
+
+/**
+ * @typedef {Object} ScoreTrendChartProps
+ * @property {TrendPoint[]} [points] - Ordered oldest to newest
+ * @property {number} [height] - SVG viewBox height
+ * @property {string} [color] - Line and point color
+ */
+
+/** @type {ScoreTrendChartProps} */
 const props = defineProps({
-  // Ordered oldest -> newest: [{ label, value }]
   points: { type: Array, default: () => [] },
   height: { type: Number, default: 220 },
   color: { type: String, default: '#1867C0' }
@@ -15,6 +45,7 @@ const props = defineProps({
 const width = 640
 const padding = { top: 20, right: 20, bottom: 36, left: 40 }
 
+/** @type {import('vue').ComputedRef<ChartGeometry|null>} */
 const geom = computed(() => {
   const data = props.points
   if (data.length === 0) return null

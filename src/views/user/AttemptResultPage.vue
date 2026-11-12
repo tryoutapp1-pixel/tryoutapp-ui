@@ -1,15 +1,13 @@
 <script setup>
-// FU14 / FU21 - score result, plus the conditional feedback flow (FU13 / FU20).
+// Score result plus the required feedback step.
 //
 // Two entry paths:
-//  1) Right after submit: the attempt store already holds the result and the
-//     backend `is_feedback` flag. When is_feedback === false we prompt the
-//     feedback form (once-per-assessment rule, enforced by the backend).
-//  2) Direct navigation / refresh: we fetch the finalized result from
-//     GET /:kind/attempts/:attemptId/result. The `is_feedback` flag is only
-//     returned by submit, so on this path we do not auto-open the feedback
-//     form; the user can still open it manually (the backend rejects duplicates
-//     with a clear 409).
+//  1) Right after submit: the attempt store holds the result and the backend
+//     `is_feedback` flag. When is_feedback === false the feedback dialog opens
+//     and stays open until feedback is saved (one per assessment).
+//  2) Direct navigation or refresh: the result is fetched from
+//     GET /:kind/attempts/:attemptId/result. That endpoint does not return
+//     `is_feedback`, so the dialog does not open on this path.
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -27,34 +25,33 @@ const router = useRouter()
 const store = useAttemptStore()
 const subscriptionStore = useSubscriptionStore()
 const uiStore = useUiStore()
-const { result: storeResult, isFeedback, answers: storeAnswers, assessmentId: storeAssessmentId } =
-  storeToRefs(store)
-// Premium status drives the explanations-button copy (Feature 3 / Feature 4).
+const { result: storeResult, isFeedback, attemptId: storeAttemptId } = storeToRefs(store)
 const { isPremium } = storeToRefs(subscriptionStore)
 
+/** @type {import('vue').ComputedRef<import('../../types/api').AssessmentKind>} */
 const kind = computed(() => route.meta.kind || 'latihan')
 const assessmentId = computed(() => route.params.id)
+const attemptId = computed(() => route.params.attemptId)
 
+/** @type {import('vue').Ref<import('../../types/api').AttemptResult|null>} */
 const result = ref(null)
 const loading = ref(false)
 const error = ref('')
 
 const feedbackOpen = ref(false)
 const feedbackSubmitting = ref(false)
-const feedbackDone = ref(false)
 
 async function load() {
-  // Prefer the fresh result produced by submit in this session.
-  if (storeResult.value && String(storeAssessmentId.value) === String(assessmentId.value)) {
+  // Prefer the result produced by submit in this session.
+  if (storeResult.value && String(storeAttemptId.value) === String(attemptId.value)) {
     result.value = storeResult.value
-    // Auto-prompt feedback only when the backend said it is missing.
     if (isFeedback.value === false) feedbackOpen.value = true
     return
   }
   loading.value = true
   error.value = ''
   try {
-    result.value = await userService.getResult(kind.value, route.params.attemptId)
+    result.value = await userService.getResult(kind.value, attemptId.value)
   } catch (e) {
     error.value = e.message
   } finally {
@@ -62,18 +59,23 @@ async function load() {
   }
 }
 
+/**
+ * Saves feedback. The dialog closes on success, or on 409 when feedback for
+ * this assessment already exists; any other error keeps it open for a retry.
+ * @param {import('../../types/api').FeedbackPayload} payload
+ */
 async function submitFeedback(payload) {
   feedbackSubmitting.value = true
   try {
     await userService.submitFeedback(assessmentId.value, payload)
-    feedbackDone.value = true
+    isFeedback.value = true
     feedbackOpen.value = false
-    uiStore.success('Thanks for your feedback!')
+    uiStore.success('Thanks for your feedback.')
   } catch (e) {
     if (e.status === 409) {
-      feedbackDone.value = true
+      isFeedback.value = true
       feedbackOpen.value = false
-      uiStore.notify('You have already submitted feedback for this assessment.', 'info')
+      uiStore.notify('You have already sent feedback for this assessment.', 'info')
     } else {
       uiStore.error(e.message)
     }
@@ -85,18 +87,15 @@ async function submitFeedback(payload) {
 function viewExplanations() {
   router.push({
     name: `user-${kind.value}-explanations`,
-    params: { id: assessmentId.value }
+    params: { id: assessmentId.value },
+    query: { attempt: attemptId.value }
   })
 }
 
-// Whether to offer the "Give feedback" button: only when we know it's pending
-// (fresh submit, is_feedback === false) and it hasn't been submitted yet.
-const canGiveFeedback = computed(() => isFeedback.value === false && !feedbackDone.value)
-
 onMounted(() => {
   load()
-  // Keep the Premium gate copy accurate.
-  subscriptionStore.fetchSubscription().catch(() => {})
+  // Keep the explanation button label accurate.
+  subscriptionStore.fetchSubscription()
 })
 </script>
 
@@ -115,22 +114,8 @@ onMounted(() => {
         <ResultCard :result="result" />
 
         <div class="d-flex flex-wrap ga-3 justify-center mt-6">
-          <v-btn
-            color="primary"
-            variant="flat"
-            prepend-icon="mdi-book-open-variant"
-            @click="viewExplanations"
-          >
-            {{ isPremium ? 'View explanations' : 'Review answers' }}
-          </v-btn>
-          <v-btn
-            v-if="canGiveFeedback"
-            color="secondary"
-            variant="tonal"
-            prepend-icon="mdi-message-star-outline"
-            @click="feedbackOpen = true"
-          >
-            Give feedback
+          <v-btn color="primary" variant="flat" prepend-icon="mdi-book-open-variant" @click="viewExplanations">
+            {{ isPremium ? 'Review answers and explanations' : 'Review answers' }}
           </v-btn>
           <v-btn
             variant="text"
@@ -143,11 +128,7 @@ onMounted(() => {
       </div>
     </StatePanel>
 
-    <FeedbackDialog
-      v-model="feedbackOpen"
-      :submitting="feedbackSubmitting"
-      @submit="submitFeedback"
-    />
+    <FeedbackDialog :model-value="feedbackOpen" :submitting="feedbackSubmitting" @submit="submitFeedback" />
   </div>
 </template>
 

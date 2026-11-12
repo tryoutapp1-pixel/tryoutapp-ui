@@ -1,21 +1,19 @@
 <script setup>
-// FU12 / FU19 - the assessment engine driver. Shared by Latihan (untimed) and
-// Try Out (timed); the only difference is the timer, which is enabled when the
-// loaded attempt carries an expired_at.
+// The assessment engine page, shared by Latihan (untimed) and Try Out (timed).
+// The timer is enabled when the loaded attempt has an expired_at deadline.
 //
-// Responsibilities wired to the attempt store:
-//  - FU12a/19a: question navigator (number grid + legend)
-//  - FU12b/19b: question + options display and selection
-//  - FU12c/19c: progress; Try Out timer sourced from the backend deadline
-//  - FU12d/19d: per-answer persistence with save status + retry
-//  - FU12e/19e: submit with confirmation + unanswered warning
+//  - Question navigator, question card, and per-answer save status with retry
+//  - Progress, and the Try Out timer driven by the backend deadline
+//  - Submit at any time; a confirmation lists unanswered questions
+//  - Try Out deadline: a persistent "Time is up" dialog whose only action is
+//    Submit. Answering is disabled while it is open.
 //
 // Edge cases:
-//  - Direct load / refresh: we load the attempt fresh from the backend, so the
-//    timer and answers are restored from server state.
-//  - Attempt already finalized (409 on load, or status not IN_PROGRESS):
-//    redirect to the result page.
-//  - Try Out deadline reached: auto-submit via the same submit flow.
+//  - Direct load or refresh reloads the attempt from the backend, so the timer
+//    and answers come from server state. A Try Out whose deadline has already
+//    passed opens the "Time is up" dialog straight away.
+//  - An attempt that is already finalized (409, or status not IN_PROGRESS)
+//    redirects to the result page.
 import { computed, onMounted, ref } from 'vue'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -26,6 +24,7 @@ import QuestionNavigator from '../../components/assessment/QuestionNavigator.vue
 import QuestionCard from '../../components/assessment/QuestionCard.vue'
 import AttemptProgress from '../../components/assessment/AttemptProgress.vue'
 import AttemptTimer from '../../components/assessment/AttemptTimer.vue'
+import TimeUpDialog from '../../components/assessment/TimeUpDialog.vue'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 
 const route = useRoute()
@@ -49,30 +48,31 @@ const {
   unansweredNumbers
 } = storeToRefs(store)
 
+/** @type {import('vue').ComputedRef<import('../../types/api').AssessmentKind>} */
 const kind = computed(() => route.meta.kind || 'latihan')
 const assessmentId = computed(() => route.params.id)
 const attemptId = computed(() => route.params.attemptId)
 
 const confirmOpen = ref(false)
-const submitted = ref(false) // suppresses the "leave?" guard after submit
-const submittingLocal = ref(false) // guards doSubmit against double entry
+const timeUpOpen = ref(false)
+const timeUpError = ref('')
+/** Suppresses the "leave?" prompt once the attempt is submitted. */
+const submitted = ref(false)
+/** Guards doSubmit against double entry. */
+const submittingLocal = ref(false)
 
-// Explicit closure so the timer isn't coupled to Pinia's action binding.
+const answeringLocked = computed(() => submitting.value || timeUpOpen.value)
+
+/** Explicit closure so the timer is not coupled to Pinia's action binding. */
 const remaining = () => store.remainingSeconds()
 
 async function load() {
   try {
     await store.loadAttempt(attemptId.value, { kind: kind.value })
-    // If the attempt is already finalized, go straight to the result.
-    if (status.value && status.value !== 'IN_PROGRESS') {
-      goToResult()
-    }
+    if (status.value && status.value !== 'IN_PROGRESS') goToResult()
   } catch (e) {
-    // 409 = already finalized: send the user to the result page.
-    if (e && e.status === 409) {
-      goToResult()
-    }
-    // other errors are surfaced by StatePanel via store.error
+    // 409 means the attempt is already finalized. Other errors are shown by StatePanel.
+    if (e && e.status === 409) goToResult()
   }
 }
 
@@ -88,34 +88,36 @@ function goToResult() {
   router.replace(resultRoute())
 }
 
-// Exit back to the assessment detail without finalizing. The onBeforeRouteLeave
-// guard below still prompts and the attempt store is left intact, so saved
-// answers and the server-tracked timer are preserved for later continuation.
+/**
+ * Back to the assessment detail without submitting. Saved answers and the
+ * server-side timer are kept, so the learner can continue later.
+ */
 function exitAttempt() {
   router.push({ name: `user-${kind.value}-detail`, params: { id: assessmentId.value } })
 }
 
+/** @param {number} optionId */
 async function onSelect(optionId) {
-  const q = activeQuestion.value
-  if (!q) return
+  const question = activeQuestion.value
+  if (!question || answeringLocked.value) return
   try {
-    await store.selectAnswer(q.id, optionId)
+    await store.selectAnswer(question.id, optionId)
   } catch {
-    uiStore.error('Could not save your answer. Tap Retry on the question to try again.')
+    uiStore.error('Could not save your answer. Select Retry on the question to try again.')
   }
 }
 
 async function onRetry() {
-  const q = activeQuestion.value
-  if (!q) return
+  const question = activeQuestion.value
+  if (!question) return
   try {
-    await store.retrySave(q.id)
+    await store.retrySave(question.id)
   } catch {
     uiStore.error('Still could not save. Check your connection and retry.')
   }
 }
 
-// Refresh signed image URLs by reloading the attempt (mints fresh URLs).
+/** Reloading the attempt mints fresh signed image URLs. */
 async function onRefreshImages() {
   await store.loadAttempt(attemptId.value, { kind: kind.value })
 }
@@ -124,47 +126,44 @@ function askSubmit() {
   confirmOpen.value = true
 }
 
-async function doSubmit(auto = false) {
+async function doSubmit() {
   if (submittingLocal.value) return
   submittingLocal.value = true
   confirmOpen.value = false
+  timeUpError.value = ''
   try {
-    const data = await store.submit()
+    await store.submit()
     submitted.value = true
-    if (auto) {
-      uiStore.notify('Time is up. Your attempt was submitted.', 'info')
-    } else {
-      uiStore.success('Your attempt was submitted.')
-    }
-    // Carry the feedback flag + just-known answers to the result page via store.
+    uiStore.success('Your attempt was submitted.')
     router.replace(resultRoute())
-    void data
   } catch (e) {
     if (e && e.status === 409) {
-      // Already finalized elsewhere; just show the result.
+      // Already finalized elsewhere; show the result.
       goToResult()
       return
     }
-    uiStore.error(e.message)
-    // Allow another attempt only when we did not navigate away.
+    if (timeUpOpen.value) timeUpError.value = e.message
+    else uiStore.error(e.message)
     submittingLocal.value = false
   }
 }
 
+/** Try Out deadline reached: block answering and ask the learner to submit. */
 function onExpired() {
-  if (status.value === 'IN_PROGRESS' && !submittingLocal.value) {
-    doSubmit(true)
-  }
+  if (kind.value !== 'tryout' || status.value !== 'IN_PROGRESS' || submitted.value) return
+  confirmOpen.value = false
+  timeUpOpen.value = true
 }
 
 const confirmMessage = computed(() => {
   const missing = unansweredNumbers.value
-  if (missing.length === 0) return 'Submit your attempt? You will not be able to change answers afterwards.'
-  return `You have ${missing.length} unanswered question(s): ${missing.join(', ')}. Submit anyway?`
+  if (missing.length === 0) return 'Submit your attempt? You cannot change your answers afterwards.'
+  const noun = missing.length === 1 ? 'question' : 'questions'
+  return `You have ${missing.length} unanswered ${noun} (${missing.join(', ')}). Unanswered questions score 0. Submit anyway?`
 })
 
-// Warn before leaving an in-progress attempt (answers are saved, but the user
-// may not intend to abandon the session).
+// Warn before leaving an in-progress attempt. Answers are saved, but the
+// learner may not intend to leave.
 onBeforeRouteLeave(() => {
   if (!submitted.value && status.value === 'IN_PROGRESS') {
     return window.confirm('Leave this attempt? Your saved answers are kept and you can continue later.')
@@ -172,11 +171,9 @@ onBeforeRouteLeave(() => {
   return true
 })
 
-// NOTE: we intentionally do NOT reset the attempt store on unmount. The result
-// page reads the just-produced result + is_feedback flag + the user's answers
-// from the store (the backend only returns is_feedback from submit and never
-// returns a finalized attempt's answers). The store clears itself when a
-// different attempt is later loaded, so there is no stale-state risk.
+// The attempt store is intentionally not reset on unmount: the result page
+// reads the just-produced result and the is_feedback flag from it. The store
+// resets itself when a different attempt is loaded.
 onMounted(load)
 </script>
 
@@ -184,7 +181,6 @@ onMounted(load)
   <div>
     <StatePanel :loading="loading" :error="error" @retry="load">
       <div v-if="status === 'IN_PROGRESS'">
-        <!-- Top bar: exit + title area + timer -->
         <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
           <div class="d-flex align-center ga-2">
             <v-btn
@@ -205,14 +201,13 @@ onMounted(load)
         </div>
 
         <v-row>
-          <!-- Main question column -->
           <v-col cols="12" md="8">
             <QuestionCard
               v-if="activeQuestion"
               :question="activeQuestion"
               :selected-option-id="answers[activeQuestion.id] || null"
               :save-status="saveStatus[activeQuestion.id] || 'idle'"
-              :disabled="submitting"
+              :disabled="answeringLocked"
               @select="onSelect"
               @retry="onRetry"
               @refresh="onRefreshImages"
@@ -248,7 +243,6 @@ onMounted(load)
             </div>
           </v-col>
 
-          <!-- Side column: progress + navigator + submit -->
           <v-col cols="12" md="4">
             <v-card variant="outlined" class="pa-4 mb-4">
               <AttemptProgress :answered="answeredCount" :total="totalQuestions" />
@@ -285,7 +279,16 @@ onMounted(load)
       confirm-text="Submit"
       confirm-color="primary"
       :loading="submitting"
-      @confirm="doSubmit(false)"
+      @confirm="doSubmit"
+    />
+
+    <TimeUpDialog
+      v-model="timeUpOpen"
+      :submitting="submitting"
+      :answered="answeredCount"
+      :total="totalQuestions"
+      :error="timeUpError"
+      @submit="doSubmit"
     />
   </div>
 </template>

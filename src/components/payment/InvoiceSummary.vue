@@ -10,10 +10,15 @@
 import StatusChip from '../StatusChip.vue'
 import { formatCurrency } from '../../lib/format'
 
-defineProps({
-  // The Premium plan from GET /users/premium/offer (may be null while loading).
+/**
+ * @typedef {Object} InvoiceSummaryProps
+ * @property {import('../../types/api').Plan|null} [plan] - Premium plan from GET /users/premium/offer; null while loading
+ * @property {import('../../types/api').Invoice|null} [invoice] - Created invoice; null before creation
+ */
+
+/** @type {InvoiceSummaryProps} */
+const props = defineProps({
   plan: { type: Object, default: null },
-  // The created invoice (may be null before creation).
   invoice: { type: Object, default: null }
 })
 </script>

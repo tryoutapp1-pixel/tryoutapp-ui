@@ -1,5 +1,5 @@
 <script setup>
-// FA1 - list users (read-only). Backend: GET /admin/users?page=&limit=
+// FA1 - read-only user list. Backend: GET /admin/users?page=&limit=
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
@@ -13,6 +13,7 @@ const router = useRouter()
 const store = useAdminUsersStore()
 const { items, pagination, loading, error } = storeToRefs(store)
 
+/** @param {number} [page=1] */
 function load(page = 1) {
   store.fetchList({ page, limit: pagination.value.limit })
 }

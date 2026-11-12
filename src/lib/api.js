@@ -12,6 +12,7 @@ import { toApiError } from './apiError'
 const DEFAULT_ORIGIN = 'http://localhost:3000'
 const TIMEOUT_MS = 15000 // project convention: 15s
 
+/** @returns {string} The API origin with a single "/api" suffix */
 function resolveBaseUrl() {
   const origin = (import.meta.env.VITE_API_ORIGIN || DEFAULT_ORIGIN).trim()
   return `${origin.replace(/\/+$/, '')}/api`
@@ -19,11 +20,21 @@ function resolveBaseUrl() {
 
 // Lightweight event bus so the auth store/router can react to an invalid session
 // without creating a circular import between the Axios layer and the store.
+/** @type {Set<() => void>} */
 const listeners = new Set()
+
+/**
+ * Registers a handler that runs when a request fails with 401 while a token
+ * is stored.
+ * @param {() => void} handler
+ * @returns {() => boolean} Unsubscribe function
+ */
 export function onInvalidSession(handler) {
   listeners.add(handler)
   return () => listeners.delete(handler)
 }
+
+/** Calls every invalid-session handler; a throwing handler does not stop the rest. */
 function emitInvalidSession() {
   for (const handler of listeners) {
     try {
@@ -74,8 +85,12 @@ http.interceptors.response.use(
   }
 )
 
-// Unwraps the backend { success, data } envelope. Success/message-only
-// responses (logout, password actions) simply return the whole payload.
+/**
+ * Unwraps the backend { success, data } envelope. Success/message-only
+ * responses (logout, password actions) return the whole payload.
+ * @param {import('axios').AxiosResponse} response
+ * @returns {any} `data` from the envelope, or the full payload when there is none
+ */
 export function getEnvelopeData(response) {
   const payload = response && response.data
   if (payload && typeof payload === 'object' && 'data' in payload) {

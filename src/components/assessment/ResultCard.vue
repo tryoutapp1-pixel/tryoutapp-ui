@@ -4,16 +4,29 @@
 // scores with pass/fail, and correct/wrong/unanswered counts when present.
 import { formatDate } from '../../lib/format'
 
+/** @typedef {'twk'|'tiu'|'tkp'} CategoryKey */
+
+/**
+ * @typedef {Object} ResultCardProps
+ * @property {import('../../types/api').AttemptResult} result - Backend-calculated result
+ */
+
+/** @type {ResultCardProps} */
 const props = defineProps({
   result: { type: Object, required: true }
 })
 
+/** @type {{ key: CategoryKey, label: string }[]} */
 const categories = [
   { key: 'twk', label: 'TWK' },
   { key: 'tiu', label: 'TIU' },
   { key: 'tkp', label: 'TKP' }
 ]
 
+/**
+ * @param {CategoryKey} key
+ * @returns {boolean} Whether the category passed, as reported by the backend
+ */
 function passed(key) {
   return props.result[`${key}_passed`]
 }

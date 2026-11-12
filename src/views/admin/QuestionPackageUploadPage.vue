@@ -1,13 +1,14 @@
 <script setup>
-// Upload a question package via Excel.
+// Upload a question package from Excel.
 // Flow:
-//  1. Admin downloads the fixed-format template.
-//  2. Fills it (one row per option, rows grouped by question_no).
-//  3. Uploads; the browser parses Excel -> JSON here.
+//  1. The admin downloads the fixed-format template.
+//  2. The admin fills it: one row per option, rows grouped by question_no.
+//  3. The admin uploads it; the browser parses the Excel file into JSON here.
 //  4. Preview, then POST /api/admin/question-packages { assessment_id, questions }.
 //
-// Business rules enforced by backend: one package per assessment; the
-// assessment must be unreleased; types TWK/TIU/TKP; 1..5 options per question.
+// Business rules enforced by the backend: one package per assessment; the
+// assessment must be unreleased; types are TWK/TIU/TKP; 1 to 5 options per
+// question.
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import adminService from '../../services/adminService'
@@ -26,12 +27,24 @@ const assessmentId = route.params.id
 
 const loading = ref(false)
 const loadError = ref('')
+/**
+ * @type {import('vue').Ref<{
+ *   id: number,
+ *   is_released?: number|boolean,
+ *   question_package: object|null
+ * }|null>}
+ */
 const assessment = ref(null)
 
+/** @type {import('vue').Ref<File|File[]|null>} */
 const file = ref(null)
 const parsing = ref(false)
 const parseError = ref('')
-const parsed = ref(null) // { questions, questionCount, optionCount }
+/**
+ * Parsed workbook: { questions, questionCount, optionCount }.
+ * @type {import('vue').Ref<Awaited<ReturnType<typeof parseWorkbook>>|null>}
+ */
+const parsed = ref(null)
 const submitting = ref(false)
 
 async function load() {

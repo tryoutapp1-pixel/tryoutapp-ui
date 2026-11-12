@@ -17,8 +17,38 @@
 import { defineStore } from 'pinia'
 import userService from '../services/userService'
 
-// Per-question answer status used by the UI (legend + chips).
-// 'idle' | 'saving' | 'saved' | 'error'
+/** @typedef {import('../types/api').AssessmentKind} AssessmentKind */
+/** @typedef {import('../types/api').AttemptState} AttemptState */
+/** @typedef {import('../types/api').AttemptQuestion} AttemptQuestion */
+/** @typedef {import('../types/api').AttemptResult} AttemptResult */
+/** @typedef {import('../types/api').SubmitResponse} SubmitResponse */
+
+/**
+ * Per-question answer status used by the UI (legend + chips).
+ * @typedef {'idle'|'saving'|'saved'|'error'} SaveStatus
+ */
+
+/**
+ * @typedef {Object} AttemptStoreState
+ * @property {AssessmentKind} kind
+ * @property {boolean} timed - True for Try Out (the attempt has a deadline)
+ * @property {number|null} attemptId
+ * @property {number|null} assessmentId
+ * @property {import('../types/api').AttemptStatus|null} status
+ * @property {AttemptQuestion[]} questions
+ * @property {Record<number, number|null>} answers - questionId to selected_option_id (null if unanswered)
+ * @property {Record<number, SaveStatus>} saveStatus - questionId to save status
+ * @property {number} activeIndex
+ * @property {string|Date|null} expiredAt - Try Out deadline from the backend
+ * @property {number} clockOffsetMs - serverNow - clientNow, applied to the local clock
+ * @property {boolean} loading
+ * @property {string} error
+ * @property {boolean} submitting
+ * @property {AttemptResult|null} result - Produced by submit or fetched afterwards
+ * @property {boolean|null} isFeedback - Backend flag: true if feedback already exists
+ */
+
+/** @returns {AttemptStoreState} */
 function freshState() {
   return {
     kind: 'latihan',
@@ -47,25 +77,38 @@ function freshState() {
 
 // Non-reactive bookkeeping kept outside state so Pinia doesn't try to proxy
 // AbortControllers / sequence counters.
+/** @type {Map<number, number>} */
 const saveSeq = new Map() // questionId -> latest issued sequence number
+/** @type {Map<number, AbortController>} */
 const saveControllers = new Map() // questionId -> AbortController
 
 export const useAttemptStore = defineStore('attempt', {
   state: () => freshState(),
 
   getters: {
+    /** @returns {number} */
     totalQuestions: (state) => state.questions.length,
+    /** @returns {number} */
     answeredCount: (state) =>
       state.questions.reduce((n, q) => (state.answers[q.id] ? n + 1 : n), 0),
+    /** @returns {number} Whole-number percentage, 0 to 100 */
     progressPercent() {
       if (!this.totalQuestions) return 0
       return Math.round((this.answeredCount / this.totalQuestions) * 100)
     },
+    /** @returns {AttemptQuestion|null} */
     activeQuestion: (state) => state.questions[state.activeIndex] || null,
+    /** @returns {number[]} Display numbers of unanswered questions */
     unansweredNumbers: (state) =>
       state.questions.filter((q) => !state.answers[q.id]).map((q) => q.number),
+    /** @returns {(questionId: number) => boolean} */
     isAnswered: (state) => (questionId) => Boolean(state.answers[questionId]),
+    /** @returns {(questionId: number) => SaveStatus} */
     statusOf: (state) => (questionId) => state.saveStatus[questionId] || 'idle',
+    /**
+     * True once the server-adjusted clock passes the Try Out deadline.
+     * @returns {boolean}
+     */
     isExpiredByClock() {
       if (!this.timed || !this.expiredAt) return false
       return this.serverNow() >= new Date(this.expiredAt).getTime()
@@ -73,17 +116,24 @@ export const useAttemptStore = defineStore('attempt', {
   },
 
   actions: {
-    // Current time adjusted for the server/client clock skew measured at load.
+    /**
+     * Current time adjusted for the server/client clock skew measured at load.
+     * @returns {number} Epoch milliseconds
+     */
     serverNow() {
       return Date.now() + this.clockOffsetMs
     },
 
-    // Remaining seconds until the backend deadline (Try Out). Null for Latihan.
+    /**
+     * Remaining seconds until the backend deadline (Try Out).
+     * @returns {number|null} Null for Latihan
+     */
     remainingSeconds() {
       if (!this.timed || !this.expiredAt) return null
       return Math.max(0, Math.floor((new Date(this.expiredAt).getTime() - this.serverNow()) / 1000))
     },
 
+    /** Aborts in-flight saves and restores the initial state. */
     reset() {
       saveSeq.clear()
       for (const c of saveControllers.values()) {
@@ -97,13 +147,19 @@ export const useAttemptStore = defineStore('attempt', {
       Object.assign(this, freshState())
     },
 
-    // Load an in-progress attempt and hydrate questions + saved answers.
-    // kind/timed are provided by the caller (derived from the route/assessment).
-    //
-    // A fresh load for a *different* attempt clears prior engine state first; a
-    // re-load of the *same* attempt (e.g. refreshing expired signed image URLs)
-    // preserves the user's current question and the measured clock offset so the
-    // view and countdown do not jump.
+    /**
+     * Loads an in-progress attempt and hydrates questions and saved answers.
+     * `kind` is provided by the caller (derived from the route); `timed` is
+     * derived from the attempt's deadline.
+     *
+     * A fresh load for a *different* attempt clears prior engine state first; a
+     * re-load of the *same* attempt (e.g. refreshing expired signed image URLs)
+     * preserves the user's current question and the measured clock offset so the
+     * view and countdown do not jump.
+     * @param {number|string} attemptId
+     * @param {{ kind?: AssessmentKind }} [options]
+     * @throws {import('../lib/apiError').ApiError} When the attempt cannot be loaded
+     */
     async loadAttempt(attemptId, { kind = 'latihan' } = {}) {
       const sameAttempt = String(this.attemptId) === String(attemptId)
       if (!sameAttempt) this.reset()
@@ -120,6 +176,12 @@ export const useAttemptStore = defineStore('attempt', {
       }
     },
 
+    /**
+     * Copies a backend attempt payload into the store.
+     * @param {AttemptState} data - Attempt with `questions`
+     * @param {AssessmentKind} kind
+     * @param {{ preserveView?: boolean }} [options] - Keep the current question and clock offset
+     */
     applyAttemptState(data, kind, { preserveView = false } = {}) {
       this.kind = kind
       this.timed = Boolean(data.expired_at)
@@ -136,7 +198,9 @@ export const useAttemptStore = defineStore('attempt', {
 
       const questions = data.questions || []
       this.questions = questions
+      /** @type {Record<number, number|null>} */
       const answers = {}
+      /** @type {Record<number, SaveStatus>} */
       const saveStatus = {}
       for (const q of questions) {
         answers[q.id] = q.selected_option_id || null
@@ -152,6 +216,10 @@ export const useAttemptStore = defineStore('attempt', {
       }
     },
 
+    /**
+     * Moves to a question by zero-based index. Out-of-range indexes are ignored.
+     * @param {number} index
+     */
     goTo(index) {
       if (index >= 0 && index < this.questions.length) this.activeIndex = index
     },
@@ -162,11 +230,22 @@ export const useAttemptStore = defineStore('attempt', {
       this.goTo(this.activeIndex - 1)
     },
 
-    // Save a single answer. Optimistically reflects the selection in the UI but
-    // only marks it 'saved' once the backend confirms. Protects against races
-    // where a slower earlier request would otherwise land after a newer one.
+    /**
+     * Saves a single answer. Optimistically reflects the selection in the UI
+     * but only marks it 'saved' once the backend confirms. Protects against
+     * races where a slower earlier request would otherwise land after a newer
+     * one. Does nothing unless the attempt is IN_PROGRESS.
+     * @param {number} questionId
+     * @param {number} optionId
+     * @throws {import('../lib/apiError').ApiError} When the latest save for this question fails
+     */
     async selectAnswer(questionId, optionId) {
       if (this.status !== 'IN_PROGRESS') return
+      // One click on an option's radio also bubbles to its card, so the same
+      // selection can arrive twice. Skip it while it is saving or saved; an
+      // 'error' status still goes through so Retry works.
+      const currentStatus = this.saveStatus[questionId]
+      if (this.answers[questionId] === optionId && (currentStatus === 'saving' || currentStatus === 'saved')) return
       // Reflect the selection immediately for responsiveness.
       this.answers = { ...this.answers, [questionId]: optionId }
 
@@ -205,14 +284,21 @@ export const useAttemptStore = defineStore('attempt', {
       }
     },
 
-    // Retry a failed save using the currently selected option.
+    /**
+     * Retries a failed save using the currently selected option.
+     * @param {number} questionId
+     */
     async retrySave(questionId) {
       const optionId = this.answers[questionId]
       if (optionId) await this.selectAnswer(questionId, optionId)
     },
 
-    // Submit the attempt. Guards against duplicate submissions. Returns
-    // { is_feedback, result } from the backend.
+    /**
+     * Submits the attempt. Guards against duplicate submissions: while a
+     * submit is in flight, or once the attempt is no longer IN_PROGRESS, it
+     * returns the stored values instead of calling the backend.
+     * @returns {Promise<SubmitResponse|{ is_feedback: boolean|null, result: AttemptResult|null }>}
+     */
     async submit() {
       if (this.submitting || this.status !== 'IN_PROGRESS') {
         return { is_feedback: this.isFeedback, result: this.result }

@@ -3,6 +3,13 @@
 // Values are derived from persisted answer state in the attempt store.
 import { computed } from 'vue'
 
+/**
+ * @typedef {Object} AttemptProgressProps
+ * @property {number} [answered] - Questions answered so far
+ * @property {number} [total] - Questions in the attempt
+ */
+
+/** @type {AttemptProgressProps} */
 const props = defineProps({
   answered: { type: Number, default: 0 },
   total: { type: Number, default: 0 }

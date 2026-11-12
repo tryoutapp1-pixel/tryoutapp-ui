@@ -1,5 +1,10 @@
 // Small display formatters shared by views.
 
+/**
+ * Date and time in the browser locale.
+ * @param {string|number|Date|null|undefined} value
+ * @returns {string} '-' when empty; the raw value when it is not a valid date
+ */
 export function formatDate(value) {
   if (!value) return '-'
   const d = new Date(value)
@@ -7,6 +12,11 @@ export function formatDate(value) {
   return d.toLocaleString()
 }
 
+/**
+ * Human-readable file size, e.g. "1.5 MB".
+ * @param {number|string|null|undefined} bytes
+ * @returns {string} '-' when zero, empty, or not a number
+ */
 export function formatBytes(bytes) {
   const n = Number(bytes)
   if (!n || Number.isNaN(n)) return '-'
@@ -20,11 +30,21 @@ export function formatBytes(bytes) {
   return `${value.toFixed(value < 10 && i > 0 ? 1 : 0)} ${units[i]}`
 }
 
+/**
+ * The backend sends `is_released` as a MySQL boolean, so accept 1/'1' too.
+ * @param {unknown} value
+ * @returns {boolean}
+ */
 export function isReleased(value) {
   return value === true || value === 1 || value === '1'
 }
 
-// Format an integer amount (IDR has no decimal subunit) as Indonesian Rupiah.
+/**
+ * Formats an integer amount (IDR has no decimal subunit) as Indonesian Rupiah.
+ * @param {number|string} value
+ * @param {string} [currency='IDR'] - ISO 4217 code
+ * @returns {string} '-' when the value is not a number
+ */
 export function formatCurrency(value, currency = 'IDR') {
   const n = Number(value)
   if (Number.isNaN(n)) return '-'
@@ -40,7 +60,11 @@ export function formatCurrency(value, currency = 'IDR') {
   }
 }
 
-// Date only (no time), for display in lists and cards.
+/**
+ * Date only (no time), for display in lists and cards.
+ * @param {string|number|Date|null|undefined} value
+ * @returns {string} '-' when empty; the raw value when it is not a valid date
+ */
 export function formatDateOnly(value) {
   if (!value) return '-'
   const d = new Date(value)
@@ -48,12 +72,18 @@ export function formatDateOnly(value) {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-// Seconds -> "MM:SS" or "HH:MM:SS" for the assessment timer.
+/**
+ * Seconds to "MM:SS" or "HH:MM:SS" for the assessment timer. Negative or
+ * invalid input shows as "00:00".
+ * @param {number|string|null|undefined} totalSeconds
+ * @returns {string}
+ */
 export function formatDuration(totalSeconds) {
   const s = Math.max(0, Math.floor(Number(totalSeconds) || 0))
   const hours = Math.floor(s / 3600)
   const minutes = Math.floor((s % 3600) / 60)
   const seconds = s % 60
+  /** @param {number} n */
   const pad = (n) => String(n).padStart(2, '0')
   return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`
 }

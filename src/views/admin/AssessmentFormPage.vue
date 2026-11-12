@@ -1,9 +1,9 @@
 <script setup>
-// Create / edit an assessment.
+// Create or edit an assessment.
 // Business rules (api/src/services/adminService.validateAssessmentValues):
-//  - type TRYOUT requires a positive duration_minutes
-//  - type LATIHAN requires duration_minutes = null
-//  - passing scores are decimals >= 0 (up to 2 dp)
+//  - Type TRYOUT requires a positive duration_minutes.
+//  - Type LATIHAN requires duration_minutes = null.
+//  - Passing scores are decimals >= 0 with up to 2 decimal places.
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useForm } from 'vee-validate'
@@ -26,10 +26,13 @@ const loading = ref(false)
 const loadError = ref('')
 const submitting = ref(false)
 const formError = ref('')
+/** @type {import('vue').Ref<import('../../lib/apiError').FieldErrors>} */
 const fieldErrors = ref({})
 
-// type / access are plain selects (not vee-validate fields).
+// Type and access are plain selects, not vee-validate fields.
+/** @type {import('vue').Ref<import('../../types/api').AssessmentType>} */
 const type = ref('LATIHAN')
+/** @type {import('vue').Ref<import('../../types/api').AccessType>} */
 const accessType = ref('FREE')
 
 const { handleSubmit, setValues, values } = useForm({
@@ -45,6 +48,11 @@ const { handleSubmit, setValues, values } = useForm({
 
 const isTryout = computed(() => type.value === 'TRYOUT')
 
+/**
+ * Converts a form value to a number; empty or non-numeric input becomes null.
+ * @param {unknown} v
+ * @returns {number|null}
+ */
 function numberOrNull(v) {
   if (v === '' || v === null || v === undefined) return null
   const n = Number(v)
@@ -74,6 +82,11 @@ async function loadForEdit() {
   }
 }
 
+/**
+ * Field rule for duration_minutes; only enforced for TRYOUT.
+ * @param {string} v
+ * @returns {true|string} True when valid, otherwise the error message
+ */
 function durationRule(v) {
   if (!isTryout.value) return true
   const n = Number(v)
@@ -81,6 +94,11 @@ function durationRule(v) {
   return true
 }
 
+/**
+ * Field rule for passing scores: empty, or a number >= 0 with up to 2 decimals.
+ * @param {string|null} v
+ * @returns {true|string} True when valid, otherwise the error message
+ */
 function scoreRule(v) {
   if (v === '' || v === null) return true
   const n = Number(v)

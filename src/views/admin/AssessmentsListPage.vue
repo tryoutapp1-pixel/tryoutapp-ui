@@ -11,17 +11,30 @@ import StatePanel from '../../components/StatePanel.vue'
 import StatusChip from '../../components/StatusChip.vue'
 import { formatDate, isReleased } from '../../lib/format'
 
+/**
+ * @typedef {import('../../types/api').AssessmentSummary & {
+ *   is_released?: number|boolean,
+ *   created_at: string
+ * }} AdminAssessmentRow
+ */
+
 const router = useRouter()
 const store = useAdminAssessmentsStore()
 const uiStore = useUiStore()
 const { items, pagination, loading, error } = storeToRefs(store)
 
+/**
+ * Id of the row whose release toggle is in flight.
+ * @type {import('vue').Ref<number|null>}
+ */
 const togglingId = ref(null)
 
+/** @param {number} [page=1] */
 function load(page = 1) {
   store.fetchList({ page, limit: pagination.value.limit })
 }
 
+/** @param {AdminAssessmentRow} item */
 async function toggleRelease(item) {
   togglingId.value = item.id
   try {

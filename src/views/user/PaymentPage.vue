@@ -1,5 +1,5 @@
 <script setup>
-// Feature 7 - Dedicated payment execution page.
+// Feature 7 - dedicated payment execution page.
 //
 // Separate from the checkout/invoice page. It shows the current order and runs
 // the Midtrans Snap popup using the snap_token the backend returned. The Snap
@@ -33,6 +33,7 @@ const error = ref('')
 const paying = ref(false)
 const snapConfigured = isSnapConfigured()
 
+/** @type {import('vue').ComputedRef<import('../../types/api').Invoice|null>} */
 const invoice = computed(() => activeInvoice.value)
 
 async function load() {

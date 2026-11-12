@@ -1,9 +1,12 @@
 <script setup>
 // FA3/FA4/FA5/FA7 - images library.
-// - List shows signed-URL thumbnails (URLs expire in 60s; "refresh" re-signs).
-// - Upload accepts JPEG/PNG/WEBP/GIF (backend enforces type + magic bytes + size).
+// - The list shows signed-URL thumbnails. URLs expire after 60 seconds; the
+//   refresh button signs a new one.
+// - Upload accepts JPEG/PNG/WEBP/GIF. The backend checks type, magic bytes,
+//   and size.
 // - Each card shows the attachment ID to copy into the question Excel template.
-// - Delete is confirmed; backend returns 409 if the image is still referenced.
+// - Delete asks for confirmation; the backend returns 409 if the image is
+//   still referenced.
 import { onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAdminFilesStore } from '../../stores/adminFiles'
@@ -13,14 +16,18 @@ import StatePanel from '../../components/StatePanel.vue'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { formatBytes, formatDate } from '../../lib/format'
 
+/** @typedef {import('../../types/api').FileInfo} FileInfo */
+
 const store = useAdminFilesStore()
 const uiStore = useUiStore()
 const { items, pagination, loading, uploading, error } = storeToRefs(store)
 
 const ACCEPT = 'image/jpeg,image/png,image/webp,image/gif'
 const MAX_BYTES = 5 * 1024 * 1024
+/** @type {import('vue').Ref<File|File[]|null>} */
 const selectedFile = ref(null)
 
+/** @param {number} [page=1] */
 function load(page = 1) {
   store.fetchList({ page, limit: pagination.value.limit })
 }
@@ -41,6 +48,10 @@ async function onUpload() {
   }
 }
 
+/**
+ * Copies the attachment ID; falls back to showing it when the clipboard is unavailable.
+ * @param {number} id
+ */
 async function copyId(id) {
   try {
     await navigator.clipboard.writeText(String(id))
@@ -50,6 +61,7 @@ async function copyId(id) {
   }
 }
 
+/** @param {FileInfo} item - Updated in place with the fresh signed URL */
 async function onRefreshUrl(item) {
   try {
     item.url = await store.refreshUrl(item.id)
@@ -62,8 +74,10 @@ async function onRefreshUrl(item) {
 // Delete confirmation
 const confirmOpen = ref(false)
 const deleting = ref(false)
+/** @type {import('vue').Ref<FileInfo|null>} */
 const target = ref(null)
 
+/** @param {FileInfo} item */
 function askDelete(item) {
   target.value = item
   confirmOpen.value = true

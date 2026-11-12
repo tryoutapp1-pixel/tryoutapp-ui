@@ -1,29 +1,40 @@
 <script setup>
-// FU10 (Latihan list) / FU17 (Try Out list). One page, parameterized by the
-// route meta `kind` ('latihan' | 'tryout'). The backend returns released,
-// access-appropriate assessments with a question_count (and duration_minutes
-// for Try Out). Cards link to the detail page.
+// Latihan list / Try Out list. One page, parameterized by route meta `kind`
+// ('latihan' | 'tryout'). The backend returns every released assessment,
+// FREE and PREMIUM. A Free user who opens a PREMIUM card gets the Premium
+// dialog instead of the detail page.
 import { computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAssessmentsStore } from '../../stores/assessments'
+import { usePremiumGate } from '../../composables/usePremiumGate'
 import PageHeader from '../../components/PageHeader.vue'
 import StatePanel from '../../components/StatePanel.vue'
 import StatusChip from '../../components/StatusChip.vue'
+import PremiumRequiredDialog from '../../components/PremiumRequiredDialog.vue'
+
+/** @typedef {import('../../types/api').AssessmentSummary} AssessmentSummary */
 
 const route = useRoute()
+const router = useRouter()
 const store = useAssessmentsStore()
+const { dialogOpen, isLocked, guard } = usePremiumGate()
 
+/** @type {import('vue').ComputedRef<import('../../types/api').AssessmentKind>} */
 const kind = computed(() => route.meta.kind || 'latihan')
 const isTryout = computed(() => kind.value === 'tryout')
 const slice = computed(() => store[kind.value])
 
 const heading = computed(() => (isTryout.value ? 'Try Out' : 'Latihan'))
-const subtitle = computed(() =>
-  isTryout.value ? 'Timed assessment packages.' : 'Untimed practice packages.'
-)
+const subtitle = computed(() => (isTryout.value ? 'Timed assessment packages.' : 'Untimed practice packages.'))
 
+/** @param {number} [page=1] */
 function load(page = 1) {
   store.fetchList(kind.value, { page, limit: slice.value.pagination.limit })
+}
+
+/** @param {AssessmentSummary} assessment */
+async function open(assessment) {
+  if (await guard(assessment)) router.push(`/app/${kind.value}/${assessment.id}`)
 }
 
 onMounted(() => load(1))
@@ -45,10 +56,14 @@ watch(kind, () => load(1))
       <v-row>
         <v-col v-for="a in slice.items" :key="a.id" cols="12" sm="6" md="4">
           <v-card
-            :to="`/app/${kind}/${a.id}`"
             variant="outlined"
             class="pa-5 h-100 d-flex flex-column"
+            :class="{ 'card-locked': isLocked(a) }"
+            :aria-label="isLocked(a) ? `${a.title}, Premium only` : a.title"
+            link
             hover
+            @click="open(a)"
+            @keydown.enter="open(a)"
           >
             <div class="d-flex align-center justify-space-between mb-2">
               <StatusChip :value="a.type" />
@@ -67,6 +82,10 @@ watch(kind, () => load(1))
                 <v-icon icon="mdi-timer-outline" size="16" />
                 {{ a.duration_minutes }} min
               </span>
+              <span v-if="isLocked(a)" class="d-flex align-center ga-1 ms-auto text-amber-darken-3">
+                <v-icon icon="mdi-lock-outline" size="16" />
+                Premium
+              </span>
             </div>
           </v-card>
         </v-col>
@@ -81,5 +100,17 @@ watch(kind, () => load(1))
         />
       </div>
     </StatePanel>
+
+    <PremiumRequiredDialog
+      v-model="dialogOpen"
+      :title="`This ${heading} is for Premium members`"
+      :message="`Upgrade to Premium to work on every ${heading} package and to read the full explanation for each question.`"
+    />
   </div>
 </template>
+
+<style scoped>
+.card-locked {
+  background-color: rgba(var(--v-theme-on-surface), 0.02);
+}
+</style>

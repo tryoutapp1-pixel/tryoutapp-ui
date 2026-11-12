@@ -1,21 +1,31 @@
 <script setup>
 // One row in an assessment's attempt history (Feature 1 / Feature 2).
 //
-// Shows the metadata the backend actually provides for a finalized attempt
-// (completed date, status, total + per-category scores) and offers a button
-// that navigates to that specific attempt's result page. The attempt_id is the
-// individual attempt — never the assessment id — so the result page loads the
-// correct attempt.
+// Shows the metadata the backend provides for a finalized attempt (completed
+// date, status, total and per-category scores) and offers a button that opens
+// that attempt's result page. The attempt_id identifies the individual attempt,
+// never the assessment, so the result page loads the correct attempt.
 import StatusChip from '../StatusChip.vue'
 import { formatDate } from '../../lib/format'
 
-defineProps({
-  // { attempt_id, status, completed_at, total_score, twk_score, tiu_score,
-  //   tkp_score }
+/** @typedef {import('../../types/api').AttemptHistoryEntry} AttemptHistoryEntry */
+
+/**
+ * @typedef {Object} AttemptHistoryItemProps
+ * @property {AttemptHistoryEntry} attempt - The attempt shown in this row
+ * @property {number} [index] - Ordinal label (e.g. 1 for "Attempt 1"); presentation only
+ */
+
+/** @type {AttemptHistoryItemProps} */
+const props = defineProps({
   attempt: { type: Object, required: true },
-  // Ordinal label (e.g. 1 for "Attempt 1"); purely presentational.
   index: { type: Number, default: 0 }
 })
+
+/**
+ * @typedef {Object} AttemptHistoryItemEmits
+ * @property {(attempt: AttemptHistoryEntry) => void} view - Continue or view the result of this attempt
+ */
 defineEmits(['view'])
 </script>
 

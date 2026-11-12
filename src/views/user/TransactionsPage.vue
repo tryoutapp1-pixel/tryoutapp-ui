@@ -1,7 +1,7 @@
 <script setup>
-// FU7 - transaction history. Lists the authenticated user's transactions with
-// amount, order id, payment method, status, and date. Paginated (backend
-// supports page/limit). Read-only; statuses come straight from the backend.
+// FU7 - transaction history. Lists the signed-in user's transactions with
+// amount, order ID, payment method, status, and date. Paginated through the
+// backend's page/limit. Read-only; statuses come straight from the backend.
 import { onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useSubscriptionStore } from '../../stores/subscription'
@@ -10,10 +10,18 @@ import StatePanel from '../../components/StatePanel.vue'
 import StatusChip from '../../components/StatusChip.vue'
 import { formatCurrency, formatDate } from '../../lib/format'
 
+/**
+ * @typedef {Object} TableHeader
+ * @property {string} title - Column label
+ * @property {keyof import('../../types/api').Transaction} key - Transaction field shown in the column
+ * @property {boolean} sortable
+ */
+
 const store = useSubscriptionStore()
 const { transactions, transactionsPagination, transactionsLoading, transactionsError } =
   storeToRefs(store)
 
+/** @type {TableHeader[]} */
 const headers = [
   { title: 'Order ID', key: 'order_id', sortable: false },
   { title: 'Amount', key: 'amount', sortable: false },
@@ -22,6 +30,7 @@ const headers = [
   { title: 'Date', key: 'created_at', sortable: false }
 ]
 
+/** @param {number} [page=1] */
 function load(page = 1) {
   store.fetchTransactions({ page, limit: transactionsPagination.value.limit })
 }

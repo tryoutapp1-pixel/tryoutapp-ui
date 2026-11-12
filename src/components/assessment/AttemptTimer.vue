@@ -7,15 +7,27 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { formatDuration } from '../../lib/format'
 
+/**
+ * @typedef {Object} AttemptTimerProps
+ * @property {() => number|null} remaining - Returns remaining seconds (null if untimed).
+ *   Provided by the attempt store so the backend deadline stays the single source of truth.
+ * @property {number} [warnAtSeconds] - Below this many seconds the chip turns red
+ */
+
+/** @type {AttemptTimerProps} */
 const props = defineProps({
-  // Function returning remaining seconds (null if untimed). Provided by the
-  // attempt store so the single source of truth is the backend deadline.
   remaining: { type: Function, required: true },
   warnAtSeconds: { type: Number, default: 300 }
 })
+
+/**
+ * @typedef {Object} AttemptTimerEmits
+ * @property {() => void} expired - Emitted once when the remaining time reaches 0
+ */
 const emit = defineEmits(['expired'])
 
 const seconds = ref(props.remaining() ?? 0)
+/** @type {ReturnType<typeof setInterval>|null} */
 let timer = null
 let fired = false
 

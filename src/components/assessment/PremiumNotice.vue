@@ -1,9 +1,17 @@
 <script setup>
 // Premium upsell shown where a Free user hits Premium-only content
-// (Feature 3 / Feature 4 explanations). Presentation only — it never grants
+// (Feature 3 / Feature 4 explanations). Presentation only; it never grants
 // access. Backend authorization remains the sole authority; this just routes
 // the user to the subscription page.
-defineProps({
+
+/**
+ * @typedef {Object} PremiumNoticeProps
+ * @property {string} [title] - Heading text
+ * @property {string} [message] - Body text
+ */
+
+/** @type {PremiumNoticeProps} */
+const props = defineProps({
   title: { type: String, default: 'Premium feature' },
   message: {
     type: String,

@@ -1,7 +1,7 @@
 <script setup>
-// Forgot password page (FUA3 - request step).
-// Posts the email via API (@submit.prevent). The backend returns an
-// enumeration-safe message that does not reveal whether the account exists.
+// Forgot password page (FUA3, request step).
+// Posts the email through the API (@submit.prevent). The backend returns a
+// generic message that does not reveal whether the account exists.
 import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import authService from '../../services/authService'

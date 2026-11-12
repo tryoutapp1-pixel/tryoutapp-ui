@@ -1,8 +1,8 @@
 <script setup>
-// Change password (FU5). Requires the current password (backend validates it).
-// Stateless flow: calls authService directly, no shared state needed. Passwords
-// live only in the form and are cleared after submit. @submit.prevent keeps
-// them out of the URL.
+// Change password (FU5). Requires the current password, which the backend
+// validates. Stateless flow: calls authService directly with no shared state.
+// Passwords live only in the form and are cleared after a successful submit.
+// @submit.prevent keeps them out of the URL.
 import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import authService from '../../services/authService'
@@ -14,6 +14,7 @@ import AppPasswordField from '../../components/form/AppPasswordField.vue'
 const uiStore = useUiStore()
 const submitting = ref(false)
 const formError = ref('')
+/** @type {import('vue').Ref<import('../../lib/apiError').FieldErrors>} */
 const fieldErrors = ref({})
 
 const { handleSubmit, resetForm, values } = useForm({

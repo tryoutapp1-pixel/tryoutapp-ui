@@ -8,18 +8,62 @@ import { ref, watch, computed } from 'vue'
 import adminService from '../../services/adminService'
 import { useUiStore } from '../../stores/ui'
 
+/**
+ * Admin view of an answer option, as returned by the admin question endpoints.
+ * @typedef {Object} AdminOption
+ * @property {number} id
+ * @property {string} [option_text]
+ * @property {number|string} [score]
+ * @property {number|null} [image_attachment_id]
+ * @property {number} [option_order] - 1..5, maps to option code A..E
+ */
+
+/**
+ * Editable form state. Inputs keep ids and scores as strings.
+ * @typedef {Object} OptionForm
+ * @property {string} option_text
+ * @property {string} score
+ * @property {string} image_attachment_id - Empty string means no image
+ * @property {number} option_order
+ */
+
+/**
+ * PATCH body with only the changed fields.
+ * @typedef {Object} OptionPatch
+ * @property {string} [option_text]
+ * @property {number} [score]
+ * @property {number|null} [image_attachment_id] - NaN when the input is invalid
+ * @property {number} [option_order]
+ */
+
+/**
+ * @typedef {Object} OptionEditDialogProps
+ * @property {boolean} modelValue - Dialog visibility (v-model)
+ * @property {number|string|null} [questionId] - Question that owns the option
+ * @property {AdminOption|null} [option] - Option being edited
+ */
+
+/** @type {OptionEditDialogProps} */
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   questionId: { type: [Number, String], default: null },
   option: { type: Object, default: null }
 })
+
+/**
+ * @typedef {Object} OptionEditDialogEmits
+ * @property {(value: boolean) => void} update:modelValue
+ * @property {(option: AdminOption) => void} saved - The updated option from the backend
+ */
 const emit = defineEmits(['update:modelValue', 'saved'])
 
 const uiStore = useUiStore()
 const saving = ref(false)
 const formError = ref('')
 
+/** @type {import('vue').Ref<OptionForm>} */
 const form = ref({ option_text: '', score: '0', image_attachment_id: '', option_order: 1 })
+/** @type {import('vue').Ref<OptionForm|null>} */
 const original = ref(null)
 
 watch(
@@ -43,13 +87,20 @@ function close() {
   emit('update:modelValue', false)
 }
 
+/**
+ * Normalizes an attachment id input.
+ * @param {string|number|null|undefined} v - Raw input value
+ * @returns {number|null} The id, null when empty, or NaN when not a positive integer
+ */
 function idOrNull(v) {
   if (v === '' || v === null || v === undefined) return null
   const n = Number(v)
   return Number.isInteger(n) && n >= 1 ? n : NaN
 }
 
+/** @type {import('vue').ComputedRef<OptionPatch>} */
 const changedPayload = computed(() => {
+  /** @type {OptionPatch} */
   const payload = {}
   const o = original.value || {}
   if (form.value.option_text !== o.option_text) payload.option_text = form.value.option_text.trim()
@@ -59,6 +110,7 @@ const changedPayload = computed(() => {
   return payload
 })
 
+/** @returns {Promise<void>} */
 async function save() {
   formError.value = ''
   const payload = changedPayload.value
@@ -68,6 +120,11 @@ async function save() {
   }
   if (payload.option_text !== undefined && !payload.option_text) {
     formError.value = 'Option text cannot be empty.'
+    return
+  }
+  // Number('') is 0, so an emptied field would silently save a score of 0.
+  if (payload.score !== undefined && String(form.value.score ?? '').trim() === '') {
+    formError.value = 'Enter a score. Use 0 if this option should score nothing.'
     return
   }
   if (payload.score !== undefined && (Number.isNaN(payload.score) || payload.score < 0)) {

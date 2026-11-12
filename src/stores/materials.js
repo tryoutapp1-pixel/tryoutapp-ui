@@ -1,22 +1,26 @@
-// Learner materials store (FU8, FU9).
+// Learner materials store.
 //
-// The backend already filters materials by the user's effective subscription
-// (Free users see FREE only; Premium users see FREE + PREMIUM) and by release
-// state, so the frontend just displays what it receives. Detail responses embed
-// a short-lived (60s) signed file URL; we refetch the detail to refresh it
-// rather than caching the URL.
+// The list holds every released material, FREE and PREMIUM; the list page asks
+// Free users to upgrade before opening a PREMIUM one, and the backend returns
+// 403 if they open it anyway. Detail responses embed a signed file URL that
+// expires in about 60 seconds, so details are refetched instead of cached.
 import { defineStore } from 'pinia'
 import userService from '../services/userService'
 
+/** @typedef {import('../types/api').Material} Material */
+
 export const useMaterialsStore = defineStore('materials', {
   state: () => ({
+    /** @type {Material[]} */
     items: [],
+    /** @type {import('../types/api').Pagination} */
     pagination: { page: 1, limit: 12, total: 0, totalPages: 0 },
     loading: false,
     error: ''
   }),
 
   actions: {
+    /** @param {import('../types/api').PageQuery} [query] */
     async fetchList({ page = 1, limit = 12 } = {}) {
       this.loading = true
       this.error = ''
@@ -31,8 +35,10 @@ export const useMaterialsStore = defineStore('materials', {
       }
     },
 
-    // Returns the full material (including a fresh signed file URL). Not cached
-    // in state so the signed URL is never reused past its lifetime.
+    /**
+     * @param {number|string} id
+     * @returns {Promise<Material>} Includes a fresh signed file URL
+     */
     async fetchDetail(id) {
       return userService.getMaterial(id)
     }

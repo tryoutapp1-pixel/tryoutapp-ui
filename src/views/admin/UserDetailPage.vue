@@ -1,7 +1,8 @@
 <script setup>
-// FA2 - user detail + suspend/reactivate (FR baru).
+// FA2 - user detail with suspend and reactivate (new requirement).
 // Backend: GET /admin/users/:id, PATCH /admin/users/:id/suspend|reactivate.
-// Only USER accounts can be suspended; a not-yet-verified account cannot.
+// Only USER accounts can be suspended; an account that is not yet verified
+// cannot.
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAdminUsersStore } from '../../stores/adminUsers'
@@ -12,17 +13,34 @@ import StatusChip from '../../components/StatusChip.vue'
 import ConfirmDialog from '../../components/ConfirmDialog.vue'
 import { formatDate } from '../../lib/format'
 
+/**
+ * @typedef {Object} AdminUser
+ * @property {number} id
+ * @property {'USER'|'ADMIN'} role
+ * @property {string} name
+ * @property {string} email
+ * @property {'PENDING_VERIFICATION'|'ACTIVE'|'SUSPENDED'} status
+ * @property {string|null} email_verified_at
+ * @property {string} created_at
+ * @property {import('../../types/api').AccessType} subscription_status
+ * @property {string|null} subscription_started_at
+ * @property {string|null} subscription_expired_at
+ */
+
 const route = useRoute()
 const router = useRouter()
 const store = useAdminUsersStore()
 const uiStore = useUiStore()
 
+/** @type {import('vue').Ref<AdminUser|null>} */
 const user = ref(null)
 const loading = ref(false)
 const error = ref('')
 
+/** @type {import('vue').ComputedRef<boolean|null>} */
 const isSuspended = computed(() => user.value && user.value.status === 'SUSPENDED')
 // Suspend/reactivate only applies to verified USER accounts.
+/** @type {import('vue').ComputedRef<boolean|null>} */
 const canToggle = computed(
   () => user.value && user.value.role === 'USER' && user.value.status !== 'PENDING_VERIFICATION'
 )

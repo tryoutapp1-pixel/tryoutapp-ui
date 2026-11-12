@@ -1,5 +1,5 @@
 <script setup>
-// Feature 8 - Pending payment page.
+// Feature 8 - pending payment page.
 //
 // Shown when the payment is still being processed (Snap reported pending, or
 // the record has not settled yet). It never shows Premium as active. The user
@@ -24,6 +24,7 @@ const loading = ref(true)
 const error = ref('')
 const checking = ref(false)
 
+/** Re-reads the subscription and, when an invoice is known, its transaction. */
 async function refresh() {
   await store.refreshAfterPayment()
   if (activeInvoice.value) {

@@ -4,6 +4,16 @@
 import { ref, toRef, watch } from 'vue'
 import { useField } from 'vee-validate'
 
+/**
+ * @typedef {Object} AppPasswordFieldProps
+ * @property {string} name - vee-validate field name
+ * @property {string} [label]
+ * @property {Function|Object|string} [rules] - vee-validate rules
+ * @property {string} [autocomplete]
+ * @property {string} [serverError] - Server-side error shown on the field
+ */
+
+/** @type {AppPasswordFieldProps} */
 const props = defineProps({
   name: { type: String, required: true },
   label: { type: String, default: 'Password' },

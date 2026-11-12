@@ -1,10 +1,10 @@
 <script setup>
-// Reset password page (FUA3 - reset step).
+// Reset password page (FUA3, reset step).
 //
 // The reset email links to {FRONTEND_URL}/reset-password?token=...
-// The token is a required integration callback; we read it from the query,
-// use it only for this request, and never write it to browser storage. The new
-// password is posted via API (@submit.prevent) and never enters the URL.
+// The token is a required integration callback: it is read from the query,
+// used only for this request, and never written to browser storage. The new
+// password is posted through the API (@submit.prevent) and never enters the URL.
 import { ref, onMounted } from 'vue'
 import { useForm } from 'vee-validate'
 import { useRoute, useRouter } from 'vue-router'

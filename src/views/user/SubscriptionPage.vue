@@ -1,7 +1,7 @@
 <script setup>
-// FU2 (a/b/c) + FU6 - Subscription status and Premium offer.
+// FU2 (a/b/c) + FU6 - subscription status and Premium offer.
 //
-// Upgrading now routes to the dedicated checkout flow (Feature 6 -> 7 -> 8):
+// Upgrading routes to the dedicated checkout flow (Feature 6 -> 7 -> 8):
 //   /app/checkout  : invoice summary + payment-method selection
 //   /app/payment   : Midtrans Snap execution
 //   /app/payment/* : success / pending / failed outcomes
@@ -32,8 +32,10 @@ const {
 } = storeToRefs(store)
 
 const loading = computed(() => offerLoading.value || subscriptionLoading.value)
+/** First error to show; the subscription error takes precedence. */
 const error = computed(() => subscriptionError.value || offerError.value)
 
+/** @type {string[]} */
 const benefits = [
   'Access all Premium materials',
   'Unlock Premium Latihan and Try Out packages',

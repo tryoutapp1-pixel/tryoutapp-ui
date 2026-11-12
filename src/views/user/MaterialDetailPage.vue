@@ -1,9 +1,8 @@
 <script setup>
-// FU9 - material content. The backend detail response embeds a short-lived
-// (~60s) signed URL for the file (private R2 object). We show the PDF inline and
-// offer a download; if the link expires, "Reload" refetches the detail to mint a
-// fresh signed URL rather than reusing the stale one. A 403 means the material
-// is Premium-only and the user is on Free -> we point them to the upgrade page.
+// Material content. The detail response embeds a signed file URL that expires
+// in about 60 seconds. The PDF is shown inline with a download button; "Reload"
+// refetches the detail for a fresh URL. A 403 means the material is Premium and
+// the user is Free (e.g. opened by direct URL), so we point them to Premium.
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMaterialsStore } from '../../stores/materials'
@@ -18,12 +17,17 @@ const router = useRouter()
 const store = useMaterialsStore()
 const uiStore = useUiStore()
 
+/** @type {import('vue').Ref<import('../../types/api').Material|null>} */
 const material = ref(null)
 const loading = ref(false)
 const error = ref('')
 const forbidden = ref(false)
 const refreshing = ref(false)
 
+/**
+ * @param {import('../../types/api').Material|null} m
+ * @returns {boolean}
+ */
 const isPdf = (m) => Boolean(m && m.file && m.file.mime_type === 'application/pdf')
 
 async function load() {
@@ -88,9 +92,12 @@ onMounted(load)
 
     <StatePanel v-else :loading="loading" :error="error" @retry="load">
       <v-card v-if="material" variant="outlined" class="pa-6">
-        <div class="d-flex align-center justify-space-between mb-3">
+        <div class="d-flex align-center justify-space-between flex-wrap ga-2 mb-3">
           <h2 class="text-h6 font-weight-bold mb-0">{{ material.title }}</h2>
-          <StatusChip :value="material.access_type" />
+          <div class="d-flex ga-2">
+            <StatusChip :value="material.type" />
+            <StatusChip :value="material.access_type" />
+          </div>
         </div>
         <p class="text-body-2 text-medium-emphasis mb-4">
           {{ material.description || 'No description.' }}

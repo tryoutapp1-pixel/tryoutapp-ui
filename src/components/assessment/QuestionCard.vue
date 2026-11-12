@@ -5,14 +5,34 @@
 // learner knows an answer is saving / saved / failed (never a fake "saved").
 import SignedImage from './SignedImage.vue'
 
-defineProps({
-  question: { type: Object, required: true }, // { id, number, type, text, attachment, options }
+/** @typedef {import('../../types/api').AttemptQuestion} AttemptQuestion */
+/** @typedef {'idle'|'saving'|'saved'|'error'} SaveStatus */
+
+/**
+ * @typedef {Object} QuestionCardProps
+ * @property {AttemptQuestion} question - Question with its options and attachments
+ * @property {number|null} [selectedOptionId] - The learner's current answer
+ * @property {SaveStatus} [saveStatus] - Save state of this question's answer
+ * @property {boolean} [disabled] - Blocks answer changes
+ */
+
+/** @type {QuestionCardProps} */
+const props = defineProps({
+  question: { type: Object, required: true },
   selectedOptionId: { type: [Number, null], default: null },
-  saveStatus: { type: String, default: 'idle' }, // idle|saving|saved|error
+  saveStatus: { type: String, default: 'idle' },
   disabled: { type: Boolean, default: false }
 })
+
+/**
+ * @typedef {Object} QuestionCardEmits
+ * @property {(optionId: number) => void} select - The learner picked an option
+ * @property {() => void} retry - Retry a failed save
+ * @property {() => void} refresh - A signed image URL expired
+ */
 const emit = defineEmits(['select', 'retry', 'refresh'])
 
+/** @type {Partial<Record<SaveStatus, { icon: string, color: string, text: string }>>} */
 const statusMeta = {
   saving: { icon: 'mdi-loading mdi-spin', color: 'info', text: 'Saving...' },
   saved: { icon: 'mdi-check-circle-outline', color: 'success', text: 'Saved' },

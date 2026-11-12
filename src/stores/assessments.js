@@ -1,9 +1,21 @@
-// Assessment catalog store, shared by Latihan (FU10-FU11) and Try Out
-// (FU17-FU18). "kind" is 'latihan' or 'tryout' and maps to the backend route
-// segment. Lists are kept per-kind so switching tabs doesn't clobber the other.
+// Assessment catalog store, shared by Latihan and Try Out. `kind` is 'latihan'
+// or 'tryout' and maps to the backend route segment. Lists are kept per kind so
+// switching menus does not clobber the other list.
 import { defineStore } from 'pinia'
 import userService from '../services/userService'
 
+/** @typedef {import('../types/api').AssessmentKind} AssessmentKind */
+/** @typedef {import('../types/api').AssessmentSummary} AssessmentSummary */
+
+/**
+ * @typedef {Object} AssessmentListState
+ * @property {AssessmentSummary[]} items
+ * @property {import('../types/api').Pagination} pagination
+ * @property {boolean} loading
+ * @property {string} error
+ */
+
+/** @returns {AssessmentListState} */
 function emptyList() {
   return {
     items: [],
@@ -20,6 +32,11 @@ export const useAssessmentsStore = defineStore('assessments', {
   }),
 
   actions: {
+    /**
+     * Loads every released assessment of `kind`, FREE and PREMIUM.
+     * @param {AssessmentKind} kind
+     * @param {import('../types/api').PageQuery} [query]
+     */
     async fetchList(kind, { page = 1, limit = 12 } = {}) {
       const slice = this[kind]
       slice.loading = true
@@ -35,47 +52,25 @@ export const useAssessmentsStore = defineStore('assessments', {
       }
     },
 
-    // Detail is fetched on demand and returned to the caller (not cached) so the
-    // detail page always reflects current attempt/access state.
+    /**
+     * Not cached, so the detail page always reflects current access state.
+     * @param {AssessmentKind} kind
+     * @param {number|string} assessmentId
+     * @returns {Promise<import('../types/api').AssessmentDetail>}
+     */
     async fetchDetail(kind, assessmentId) {
       return userService.getAssessment(kind, assessmentId)
     },
 
-    // Previous attempts for ONE assessment.
-    //
-    // Backend reality (verified against api/src/services/userApiService.js):
-    //  - Try Out: GET /users/tryout/statistics returns one row per
-    //    COMPLETED/EXPIRED Try Out attempt for the user, including attempt_id
-    //    and assessment_id. We filter to the requested assessment and sort
-    //    newest-first. IN_PROGRESS attempts are NOT included by the backend.
-    //  - Latihan: there is NO endpoint that lists a user's Latihan attempts.
-    //    We therefore return `supported: false` so the UI can render an honest
-    //    notice instead of fabricating history.
-    //
-    // Returns: { supported, items: [{ attempt_id, assessment_id, completed_at,
-    //   total_score, twk_score, tiu_score, tkp_score, status }] }
+    /**
+     * The user's finalized attempts of one assessment, newest first. Works for
+     * both kinds and for Free and Premium users.
+     * @param {AssessmentKind} kind
+     * @param {number|string} assessmentId
+     * @returns {Promise<import('../types/api').AttemptHistoryEntry[]>}
+     */
     async fetchAttemptHistory(kind, assessmentId) {
-      if (kind !== 'tryout') {
-        return { supported: false, items: [] }
-      }
-      const rows = (await userService.getTryoutStatistics()) || []
-      const items = rows
-        .filter((r) => String(r.assessment_id) === String(assessmentId))
-        .map((r) => ({
-          attempt_id: r.attempt_id,
-          assessment_id: r.assessment_id,
-          assessment_title: r.assessment_title,
-          completed_at: r.completed_at,
-          total_score: Number(r.total_score),
-          twk_score: Number(r.twk_score),
-          tiu_score: Number(r.tiu_score),
-          tkp_score: Number(r.tkp_score),
-          // Statistics only ever contains finalized attempts; the backend does
-          // not distinguish COMPLETED vs EXPIRED here, so we report COMPLETED.
-          status: 'COMPLETED'
-        }))
-        .sort((a, b) => new Date(b.completed_at) - new Date(a.completed_at))
-      return { supported: true, items }
+      return (await userService.getAttemptHistory(kind, assessmentId)) || []
     }
   }
 })

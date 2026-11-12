@@ -5,15 +5,36 @@
 // navigation event. Answer status comes from real persisted answer data.
 import { computed } from 'vue'
 
+/**
+ * @typedef {Object} NavigatorQuestion
+ * @property {number} id
+ * @property {number} number - Display number
+ */
+
+/**
+ * @typedef {Object} QuestionNavigatorProps
+ * @property {NavigatorQuestion[]} [questions]
+ * @property {Record<number, number|null|{ correct: boolean }>} [answers] - questionId to optionId|null;
+ *   in review mode, questionId to { correct }
+ * @property {number} [activeIndex] - Index of the current question
+ * @property {boolean} [review] - Highlights correct/incorrect instead of answered
+ */
+
+/** @type {QuestionNavigatorProps} */
 const props = defineProps({
-  questions: { type: Array, default: () => [] }, // [{ id, number }]
-  answers: { type: Object, default: () => ({}) }, // questionId -> optionId|null
+  questions: { type: Array, default: () => [] },
+  answers: { type: Object, default: () => ({}) },
   activeIndex: { type: Number, default: 0 },
-  // In review mode the panel highlights correct/incorrect instead of answered.
   review: { type: Boolean, default: false }
 })
+
+/**
+ * @typedef {Object} QuestionNavigatorEmits
+ * @property {(index: number) => void} navigate - Go to the question at this index
+ */
 const emit = defineEmits(['navigate'])
 
+/** @type {import('vue').ComputedRef<{ label: string, color: string }[]>} */
 const legend = computed(() =>
   props.review
     ? [
@@ -28,6 +49,11 @@ const legend = computed(() =>
       ]
 )
 
+/**
+ * @param {NavigatorQuestion} question
+ * @param {number} index
+ * @returns {string} Vuetify color name
+ */
 function tileColor(question, index) {
   if (!props.review && index === props.activeIndex) return 'info'
   const answered = Boolean(props.answers[question.id])
@@ -40,6 +66,10 @@ function tileColor(question, index) {
   return answered ? 'primary' : 'grey'
 }
 
+/**
+ * @param {number} index
+ * @returns {'flat'|'tonal'}
+ */
 function tileVariant(index) {
   return !props.review && index === props.activeIndex ? 'flat' : 'tonal'
 }

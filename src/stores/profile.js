@@ -9,19 +9,30 @@ import { defineStore } from 'pinia'
 import profileService from '../services/profileService'
 import { useAuthStore } from './auth'
 
+/** @typedef {import('../services/profileService').Profile} Profile */
+
 export const useProfileStore = defineStore('profile', {
   state: () => ({
+    /** @type {Profile|null} */
     profile: null,
     loading: false,
     saving: false
   }),
 
   getters: {
+    /** @returns {string} '' until the profile is loaded */
     displayName: (state) => (state.profile ? state.profile.name : ''),
+    /** @returns {string} '' until the profile is loaded */
     email: (state) => (state.profile ? state.profile.email : '')
   },
 
   actions: {
+    /**
+     * Returns the cached profile unless `force` is true. Also refreshes the
+     * auth store user.
+     * @param {boolean} [force=false]
+     * @returns {Promise<Profile>}
+     */
     async loadProfile(force = false) {
       if (this.profile && !force) return this.profile
       this.loading = true
@@ -36,6 +47,10 @@ export const useProfileStore = defineStore('profile', {
       }
     },
 
+    /**
+     * @param {{ name: string }} input
+     * @returns {Promise<Profile>}
+     */
     async updateProfile({ name }) {
       this.saving = true
       try {

@@ -8,7 +8,7 @@
 // navigator, submit, and the exit/back control with its leave guard).
 //
 // Exit is handled inside the attempt page, so leaving routes back through the
-// AttemptPage's onBeforeRouteLeave guard without resetting the attempt store —
+// AttemptPage's onBeforeRouteLeave guard without resetting the attempt store;
 // saved answers and the server-tracked timer are preserved. The layout is
 // responsive (fluid container) so it works on desktop and mobile.
 import { RouterView } from 'vue-router'

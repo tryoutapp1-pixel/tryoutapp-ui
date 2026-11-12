@@ -5,7 +5,19 @@
 //               @retry="reload">
 //     ...default slot: the real content...
 //   </StatePanel>
-defineProps({
+
+/**
+ * @typedef {Object} StatePanelProps
+ * @property {boolean} [loading] - Shows the loading state
+ * @property {string} [error] - Shows the error state with a retry button
+ * @property {boolean} [empty] - Shows the empty state
+ * @property {string} [loadingText]
+ * @property {string} [emptyText]
+ * @property {string} [emptyIcon] - MDI icon for the empty state
+ */
+
+/** @type {StatePanelProps} */
+const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
   empty: { type: Boolean, default: false },
@@ -13,6 +25,11 @@ defineProps({
   emptyText: { type: String, default: 'No data to display.' },
   emptyIcon: { type: String, default: 'mdi-inbox-outline' }
 })
+
+/**
+ * @typedef {Object} StatePanelEmits
+ * @property {() => void} retry - The user pressed Try again
+ */
 defineEmits(['retry'])
 </script>
 

@@ -1,11 +1,11 @@
 <script setup>
-// Feature 8 - Payment failed page.
+// Feature 8 - payment failed page.
 //
 // Shown when the payment did not go through (Snap error, or the transaction
-// record is FAILED/CANCELLED/EXPIRED). It surfaces the available failure info
+// record is FAILED/CANCELLED/EXPIRED). It shows the available failure details
 // and offers a retry that returns the user to the checkout flow. It does NOT
-// create a new payment automatically — the user must choose to retry, and the
-// backend will reuse or re-create the invoice idempotently at that point.
+// create a new payment automatically. The user must choose to retry, and the
+// backend then reuses or re-creates the invoice idempotently.
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'

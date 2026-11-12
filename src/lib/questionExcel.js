@@ -24,8 +24,44 @@
 
 import * as XLSX from 'xlsx'
 
+/** @typedef {import('../types/api').SectionType} SectionType */
+
+/**
+ * One option in the question-package payload.
+ * @typedef {Object} PackageOption
+ * @property {string} option_text
+ * @property {number} score
+ * @property {number|null} image_attachment_id
+ */
+
+/**
+ * One question in the question-package payload.
+ * @typedef {Object} PackageQuestion
+ * @property {string} question_text
+ * @property {SectionType} question_type
+ * @property {string|null} explanation
+ * @property {number|null} image_attachment_id
+ * @property {number|null} explanation_attachment_id
+ * @property {PackageOption[]} options
+ */
+
+/**
+ * @typedef {Object} ParsedWorkbook
+ * @property {PackageQuestion[]} questions
+ * @property {number} questionCount
+ * @property {number} optionCount - Total options across all questions
+ */
+
+/**
+ * One template row (one option). Cells come from Excel, so any column may be
+ * a number or a string.
+ * @typedef {Record<string, string|number>} TemplateRow
+ */
+
+/** @type {SectionType[]} */
 export const QUESTION_TYPES = ['TWK', 'TIU', 'TKP']
 
+/** @type {string[]} */
 export const TEMPLATE_HEADERS = [
   'question_no',
   'question_type',
@@ -39,6 +75,7 @@ export const TEMPLATE_HEADERS = [
 ]
 
 // Two sample questions so the admin sees exactly how to group option rows.
+/** @type {TemplateRow[]} */
 const SAMPLE_ROWS = [
   {
     question_no: 1,
@@ -72,7 +109,10 @@ const SAMPLE_ROWS = [
   { question_no: 2, question_type: '', question_text: '', explanation: '', question_image_id: '', explanation_file_id: '', option_text: 'Respon paling tidak tepat', option_score: 1, option_image_id: '' }
 ]
 
-// Build and trigger a download of the template workbook.
+/**
+ * Builds the template workbook and triggers a browser download.
+ * @param {string} [filename='question-package-template.xlsx']
+ */
 export function downloadTemplate(filename = 'question-package-template.xlsx') {
   const wb = XLSX.utils.book_new()
 
@@ -104,6 +144,11 @@ export function downloadTemplate(filename = 'question-package-template.xlsx') {
   XLSX.writeFile(wb, filename)
 }
 
+/**
+ * @param {unknown} value - Cell value
+ * @returns {number|null} Null for an empty cell
+ * @throws {Error} When the value is not a positive integer
+ */
 function toOptionalId(value) {
   if (value === '' || value === null || value === undefined) return null
   const n = Number(value)
@@ -113,6 +158,11 @@ function toOptionalId(value) {
   return n
 }
 
+/**
+ * @param {unknown} value - Cell value
+ * @returns {number}
+ * @throws {Error} When the cell is empty, not a number, or negative
+ */
 function toScore(value) {
   if (value === '' || value === null || value === undefined) {
     throw new Error('option_score wajib diisi')
@@ -124,19 +174,27 @@ function toScore(value) {
   return n
 }
 
+/**
+ * @param {unknown} value - Cell value
+ * @returns {string} Trimmed text; '' for null or undefined
+ */
 function cleanText(value) {
   return value === null || value === undefined ? '' : String(value).trim()
 }
 
-// Parse an uploaded ArrayBuffer into the question-package payload.
-// Returns { questions, questionCount, optionCount }. Throws Error with a
-// human-readable message on the first validation problem.
+/**
+ * Parses an uploaded workbook into the question-package payload.
+ * @param {ArrayBuffer} arrayBuffer - Contents of the uploaded .xlsx file
+ * @returns {Promise<ParsedWorkbook>}
+ * @throws {Error} With a human-readable message on the first validation problem
+ */
 export async function parseWorkbook(arrayBuffer) {
   const wb = XLSX.read(arrayBuffer, { type: 'array' })
   const sheetName = wb.SheetNames.find((n) => n.toLowerCase() === 'questions') || wb.SheetNames[0]
   if (!sheetName) throw new Error('File Excel tidak memiliki sheet apa pun.')
 
   const sheet = wb.Sheets[sheetName]
+  /** @type {TemplateRow[]} */
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
   if (!rows.length) throw new Error('Sheet soal kosong.')
 
@@ -148,7 +206,9 @@ export async function parseWorkbook(arrayBuffer) {
   }
 
   // Group rows by question_no, preserving first-seen order.
+  /** @type {Map<string, Array<{ row: TemplateRow, index: number }>>} */
   const groups = new Map()
+  /** @type {string[]} */
   const order = []
   rows.forEach((row, index) => {
     const no = cleanText(row.question_no)
@@ -167,6 +227,7 @@ export async function parseWorkbook(arrayBuffer) {
 
   if (!order.length) throw new Error('Tidak ada soal yang dapat dibaca dari file.')
 
+  /** @type {PackageQuestion[]} */
   const questions = []
   let optionCount = 0
 
@@ -185,6 +246,7 @@ export async function parseWorkbook(arrayBuffer) {
       throw new Error(`Soal ${no} (baris ${headLine}): question_text wajib diisi.`)
     }
 
+    /** @type {PackageOption[]} */
     const options = []
     for (const { row, index } of entries) {
       const optionText = cleanText(row.option_text)

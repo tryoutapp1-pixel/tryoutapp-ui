@@ -1,132 +1,226 @@
 // Admin API service. Owns HTTP details for every /admin/* endpoint.
-// Routes and response shapes verified against:
-//   api/src/routes/adminRoutes.js
-//   api/src/controllers/adminController.js
-//   api/src/services/adminService.js
-//   api/src/services/adminContentService.js
+// Routes and response shapes match:
+//   tryoutapp-server/src/routes/adminRoutes.js
+//   tryoutapp-server/src/services/adminService.js
+//   tryoutapp-server/src/services/adminContentService.js
 //
 // Response envelope is { success, data, message? }. Paginated endpoints return
 // data: { items, pagination: { page, limit, total, totalPages } }.
 
 import http, { getEnvelopeData } from '../lib/api'
 
+/** @typedef {import('../types/api').PageQuery} PageQuery */
+/** @typedef {import('../types/api').Material} Material */
+
+/**
+ * @param {PageQuery} [query]
+ * @returns {{ params: { page: number, limit: number } }}
+ */
 function pageParams({ page = 1, limit = 20 } = {}) {
   return { params: { page, limit } }
 }
 
+/**
+ * Drops empty filter values so they are not sent as query parameters.
+ * @param {Record<string, unknown>} params
+ * @returns {Record<string, unknown>}
+ */
+function compact(params) {
+  return Object.fromEntries(Object.entries(params).filter(([, value]) => value !== null && value !== undefined && value !== ''))
+}
+
 export default {
-  // ---- Users (FA1, FA2) ----
-  async listUsers(opts) {
-    const res = await http.get('/admin/users', pageParams(opts))
-    return getEnvelopeData(res)
-  },
-  async getUser(id) {
-    const res = await http.get(`/admin/users/${id}`)
-    return getEnvelopeData(res)
-  },
-  // Reversible suspension. suspend=true -> SUSPENDED, false -> ACTIVE.
-  async setUserSuspended(id, suspend) {
-    const path = suspend ? 'suspend' : 'reactivate'
-    const res = await http.patch(`/admin/users/${id}/${path}`)
-    return getEnvelopeData(res)
+  // ---- Users ----
+
+  /** @param {PageQuery} [query] */
+  async listUsers(query) {
+    return getEnvelopeData(await http.get('/admin/users', pageParams(query)))
   },
 
-  // ---- Images / files (FA3, FA4, FA5, FA7) ----
-  async listImages(opts) {
-    const res = await http.get('/admin/images', pageParams(opts))
-    return getEnvelopeData(res)
+  /** @param {number|string} id */
+  async getUser(id) {
+    return getEnvelopeData(await http.get(`/admin/users/${id}`))
   },
-  // Multipart upload, field name "file". data: attachment metadata.
+
+  /**
+   * Reversible suspension: true sets SUSPENDED, false sets ACTIVE.
+   * @param {number|string} id
+   * @param {boolean} suspend
+   */
+  async setUserSuspended(id, suspend) {
+    return getEnvelopeData(await http.patch(`/admin/users/${id}/${suspend ? 'suspend' : 'reactivate'}`))
+  },
+
+  // ---- Images ----
+
+  /** @param {PageQuery} [query] */
+  async listImages(query) {
+    return getEnvelopeData(await http.get('/admin/images', pageParams(query)))
+  },
+
+  /**
+   * Multipart upload, field name "file".
+   * @param {File} file
+   */
   async uploadImage(file) {
     const form = new FormData()
     form.append('file', file)
-    const res = await http.post('/admin/images', form)
-    return getEnvelopeData(res)
-  },
-  // Returns a fresh signed URL (expires in 60s). data: { url }
-  async getImageUrl(id) {
-    const res = await http.get(`/admin/images/${id}`)
-    return getEnvelopeData(res)
-  },
-  async deleteImage(id) {
-    const res = await http.delete(`/admin/images/${id}`)
-    return res.data
+    return getEnvelopeData(await http.post('/admin/images', form))
   },
 
-  // ---- Materials (FA8-11, FA24) ----
-  async listMaterials(opts) {
-    const res = await http.get('/admin/materials', pageParams(opts))
-    return getEnvelopeData(res)
+  /**
+   * @param {number|string} id
+   * @returns {Promise<{ url: string }>} Signed URL, valid for 60 seconds
+   */
+  async getImageUrl(id) {
+    return getEnvelopeData(await http.get(`/admin/images/${id}`))
   },
-  // Multipart: file (PDF) + title + optional description + optional access_type.
-  async uploadMaterial({ title, description, access_type, file }) {
+
+  /** @param {number|string} id */
+  async deleteImage(id) {
+    return (await http.delete(`/admin/images/${id}`)).data
+  },
+
+  // ---- Materials ----
+
+  /**
+   * @param {PageQuery} [query]
+   * @returns {Promise<import('../types/api').Page<Material>>}
+   */
+  async listMaterials(query) {
+    return getEnvelopeData(await http.get('/admin/materials', pageParams(query)))
+  },
+
+  /**
+   * Multipart: PDF file plus metadata. `type` is required by the backend.
+   * @param {{ title: string, description?: string, type: import('../types/api').SectionType, access_type?: import('../types/api').AccessType, file: File }} input
+   * @returns {Promise<Material>}
+   */
+  async uploadMaterial({ title, description, type, access_type: accessType, file }) {
     const form = new FormData()
     form.append('file', file)
     form.append('title', title)
+    form.append('type', type)
     if (description) form.append('description', description)
-    if (access_type) form.append('access_type', access_type)
-    const res = await http.post('/admin/materials', form)
-    return getEnvelopeData(res)
+    if (accessType) form.append('access_type', accessType)
+    return getEnvelopeData(await http.post('/admin/materials', form))
   },
+
+  /**
+   * @param {number|string} id
+   * @returns {Promise<Material>}
+   */
   async getMaterial(id) {
-    const res = await http.get(`/admin/materials/${id}`)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.get(`/admin/materials/${id}`))
   },
-  // Fresh signed URL for the material PDF. data: { url }
+
+  /**
+   * Updates metadata only; the file cannot be replaced.
+   * @param {number|string} id
+   * @param {Partial<Pick<Material, 'title'|'description'|'type'|'access_type'>>} payload
+   * @returns {Promise<Material>}
+   */
+  async updateMaterial(id, payload) {
+    return getEnvelopeData(await http.patch(`/admin/materials/${id}`, payload))
+  },
+
+  /**
+   * @param {number|string} id
+   * @returns {Promise<{ url: string }>} Signed URL, valid for 60 seconds
+   */
   async getMaterialFileUrl(id) {
-    const res = await http.get(`/admin/materials/${id}/file`)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.get(`/admin/materials/${id}/file`))
   },
+
+  /** @param {number|string} id */
   async deleteMaterial(id) {
-    const res = await http.delete(`/admin/materials/${id}`)
-    return res.data
+    return (await http.delete(`/admin/materials/${id}`)).data
   },
+
+  /**
+   * @param {number|string} id
+   * @param {boolean} released
+   */
   async setMaterialReleased(id, released) {
-    const path = released ? 'release' : 'unrelease'
-    const res = await http.patch(`/admin/materials/${id}/${path}`)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.patch(`/admin/materials/${id}/${released ? 'release' : 'unrelease'}`))
   },
 
   // ---- Assessments ----
-  async listAssessments(opts) {
-    const res = await http.get('/admin/assessments', pageParams(opts))
-    return getEnvelopeData(res)
+
+  /** @param {PageQuery} [query] */
+  async listAssessments(query) {
+    return getEnvelopeData(await http.get('/admin/assessments', pageParams(query)))
   },
+
+  /** @param {number|string} id */
   async getAssessment(id) {
-    const res = await http.get(`/admin/assessments/${id}`)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.get(`/admin/assessments/${id}`))
   },
+
+  /** @param {Record<string, unknown>} payload */
   async createAssessment(payload) {
-    const res = await http.post('/admin/assessments', payload)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.post('/admin/assessments', payload))
   },
+
+  /**
+   * @param {number|string} id
+   * @param {Record<string, unknown>} payload
+   */
   async updateAssessment(id, payload) {
-    const res = await http.patch(`/admin/assessments/${id}`, payload)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.patch(`/admin/assessments/${id}`, payload))
   },
+
+  /**
+   * @param {number|string} id
+   * @param {boolean} released
+   */
   async setAssessmentReleased(id, released) {
-    const path = released ? 'release' : 'unrelease'
-    const res = await http.post(`/admin/assessments/${id}/${path}`)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.post(`/admin/assessments/${id}/${released ? 'release' : 'unrelease'}`))
   },
 
   // ---- Question packages ----
-  // body: { assessment_id, questions: [...] }. Built from the uploaded Excel.
+
+  /**
+   * Built from the uploaded Excel.
+   * @param {{ assessment_id: number, questions: Array<Record<string, unknown>> }} payload
+   */
   async createQuestionPackage(payload) {
-    const res = await http.post('/admin/question-packages', payload)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.post('/admin/question-packages', payload))
   },
-  // Note: backend path param is the ASSESSMENT id, not the package id.
+
+  /**
+   * The path parameter is the ASSESSMENT id, not the package id.
+   * @param {number|string} assessmentId
+   */
   async getQuestionPackage(assessmentId) {
-    const res = await http.get(`/admin/assessments/${assessmentId}/question-package`)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.get(`/admin/assessments/${assessmentId}/question-package`))
   },
+
+  /**
+   * @param {number|string} questionId
+   * @param {Record<string, unknown>} payload
+   */
   async updateQuestion(questionId, payload) {
-    const res = await http.patch(`/admin/questions/${questionId}`, payload)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.patch(`/admin/questions/${questionId}`, payload))
   },
+
+  /**
+   * @param {number|string} questionId
+   * @param {number|string} optionId
+   * @param {Record<string, unknown>} payload
+   */
   async updateOption(questionId, optionId, payload) {
-    const res = await http.patch(`/admin/questions/${questionId}/options/${optionId}`, payload)
-    return getEnvelopeData(res)
+    return getEnvelopeData(await http.patch(`/admin/questions/${questionId}/options/${optionId}`, payload))
+  },
+
+  // ---- Feedback ----
+
+  /**
+   * Newest first. `summary` covers every row that matches the filters.
+   * @param {PageQuery & import('../types/api').FeedbackFilters} [query]
+   * @returns {Promise<import('../types/api').FeedbackPage>}
+   */
+  async listFeedback({ page = 1, limit = 20, ...filters } = {}) {
+    return getEnvelopeData(await http.get('/admin/feedback', { params: compact({ page, limit, ...filters }) }))
   }
 }

@@ -4,6 +4,7 @@
 //   requiresAuth: must be authenticated
 //   roles: array of allowed roles (USER / ADMIN)
 //   guestOnly: only for unauthenticated visitors (login/signup/etc.)
+//   kind: 'latihan' | 'tryout' for the shared assessment pages
 //
 // The guard initializes the auth store once (hydrating the user from a stored
 // token), then enforces access. Frontend guards are navigation/UX only; the
@@ -17,6 +18,16 @@ import UserLayout from '../layouts/UserLayout.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import AssessmentLayout from '../layouts/AssessmentLayout.vue'
 
+/**
+ * Meta fields this app reads from route records.
+ * @typedef {Object} AppRouteMeta
+ * @property {boolean} [requiresAuth] - Must be authenticated
+ * @property {import('../services/authService').Role[]} [roles] - Allowed roles; the deepest matched record wins
+ * @property {boolean} [guestOnly] - Only for unauthenticated visitors
+ * @property {import('../types/api').AssessmentKind} [kind] - Which assessment flow a shared page serves
+ */
+
+/** @type {import('vue-router').RouteRecordRaw[]} */
 const routes = [
   {
     path: '/',
@@ -69,6 +80,7 @@ const routes = [
 
       // Try Out (FU16-FU22) — same engine, with a backend-driven timer.
       { path: 'tryout', name: 'user-tryout', component: () => import('../views/user/AssessmentListPage.vue'), meta: { kind: 'tryout' } },
+      // My Progress is Premium only; the page itself explains this to Free users.
       { path: 'tryout/statistics', name: 'user-tryout-statistics', component: () => import('../views/user/StatisticsPage.vue') },
       { path: 'tryout/:id', name: 'user-tryout-detail', component: () => import('../views/user/AssessmentDetailPage.vue'), meta: { kind: 'tryout' } },
       { path: 'tryout/:id/history', name: 'user-tryout-history', component: () => import('../views/user/AttemptHistoryPage.vue'), meta: { kind: 'tryout' } },
@@ -114,7 +126,10 @@ const routes = [
       { path: 'assessments/new', name: 'admin-assessment-new', component: () => import('../views/admin/AssessmentFormPage.vue') },
       { path: 'assessments/:id', name: 'admin-assessment-detail', component: () => import('../views/admin/AssessmentDetailPage.vue') },
       { path: 'assessments/:id/edit', name: 'admin-assessment-edit', component: () => import('../views/admin/AssessmentFormPage.vue') },
-      { path: 'assessments/:id/questions', name: 'admin-assessment-questions', component: () => import('../views/admin/QuestionPackageUploadPage.vue') }
+      { path: 'assessments/:id/questions', name: 'admin-assessment-questions', component: () => import('../views/admin/QuestionPackageUploadPage.vue') },
+
+      // Learner feedback, filterable by assessment, type, rating, and difficulty
+      { path: 'feedback', name: 'admin-feedback', component: () => import('../views/admin/FeedbackListPage.vue') }
     ]
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('../views/errors/NotFoundPage.vue') }
@@ -128,12 +143,19 @@ const router = createRouter({
   }
 })
 
+/**
+ * Auth and role guard.
+ * @param {import('vue-router').RouteLocationNormalized} to
+ * @returns {Promise<import('vue-router').RouteLocationRaw|boolean>} A redirect target, or true to continue
+ */
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.initialize()
 
+  // Each record's meta follows AppRouteMeta.
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth)
   const guestOnly = to.matched.some((r) => r.meta.guestOnly)
+  /** @type {AppRouteMeta['roles']|null} */
   const allowedRoles = to.matched.reduce((roles, r) => (r.meta.roles ? r.meta.roles : roles), null)
 
   // Already authenticated users should not sit on guest-only pages.

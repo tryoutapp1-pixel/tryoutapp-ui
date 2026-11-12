@@ -1,11 +1,17 @@
 <script setup>
-// Admin layout. Admin feature pages are not built in this stage; this provides
-// the shared shell and a placeholder dashboard so ADMIN routing works.
+// Admin layout: navigation drawer, app bar, and content outlet.
 import { ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
+
+/**
+ * @typedef {Object} NavItem
+ * @property {string} title
+ * @property {string} to
+ * @property {string} icon
+ */
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -14,12 +20,14 @@ const { user } = storeToRefs(authStore)
 
 const drawer = ref(true)
 
+/** @type {NavItem[]} */
 const navItems = [
   { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard-outline' },
   { title: 'Users', to: '/admin/users', icon: 'mdi-account-group-outline' },
   { title: 'Images', to: '/admin/images', icon: 'mdi-image-multiple-outline' },
   { title: 'Materials', to: '/admin/materials', icon: 'mdi-book-open-page-variant-outline' },
   { title: 'Assessments', to: '/admin/assessments', icon: 'mdi-clipboard-text-outline' },
+  { title: 'Feedback', to: '/admin/feedback', icon: 'mdi-message-star-outline' },
   { title: 'Profile', to: '/admin/profile', icon: 'mdi-account-circle-outline' }
 ]
 
@@ -51,7 +59,7 @@ async function onLogout() {
     </v-navigation-drawer>
 
     <v-app-bar flat border>
-      <v-app-bar-nav-icon @click="drawer = !drawer" />
+      <v-app-bar-nav-icon aria-label="Toggle navigation" @click="drawer = !drawer" />
       <v-toolbar-title class="text-body-1 font-weight-medium">Administration</v-toolbar-title>
       <v-spacer />
       <v-menu>

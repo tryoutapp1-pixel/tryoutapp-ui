@@ -6,9 +6,8 @@
 // the distraction-free attempt engine. A 403 means Premium is required.
 //
 // A single "Start / Continue" action covers both the new-attempt and resume
-// cases (the backend resolves which attempt to use). A separate "View attempt
-// history" link opens the per-assessment history page (Try Out is backed by
-// GET /users/tryout/statistics; Latihan history has no backend list endpoint).
+// cases (the backend resolves which attempt to use). "View attempt history"
+// opens GET /users/:kind/:assessmentId/attempts for Latihan and Try Out.
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAssessmentsStore } from '../../stores/assessments'
@@ -23,9 +22,11 @@ const router = useRouter()
 const store = useAssessmentsStore()
 const uiStore = useUiStore()
 
+/** @type {import('vue').ComputedRef<import('../../types/api').AssessmentKind>} */
 const kind = computed(() => route.meta.kind || 'latihan')
 const isTryout = computed(() => kind.value === 'tryout')
 
+/** @type {import('vue').Ref<import('../../types/api').AssessmentDetail|null>} */
 const assessment = ref(null)
 const loading = ref(false)
 const error = ref('')

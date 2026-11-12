@@ -5,11 +5,24 @@
 // than reusing the stale one.
 import { ref, watch } from 'vue'
 
+/**
+ * @typedef {Object} SignedImageProps
+ * @property {string} [src] - Signed image URL
+ * @property {string} [alt]
+ * @property {number|string} [maxHeight]
+ */
+
+/** @type {SignedImageProps} */
 const props = defineProps({
   src: { type: String, default: '' },
   alt: { type: String, default: '' },
   maxHeight: { type: [Number, String], default: 320 }
 })
+
+/**
+ * @typedef {Object} SignedImageEmits
+ * @property {() => void} refresh - The image failed to load; the parent should refetch a fresh URL
+ */
 const emit = defineEmits(['refresh'])
 
 const failed = ref(false)
