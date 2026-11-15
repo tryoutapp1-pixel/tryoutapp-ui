@@ -21,8 +21,8 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
   empty: { type: Boolean, default: false },
-  loadingText: { type: String, default: 'Loading...' },
-  emptyText: { type: String, default: 'No data to display.' },
+  loadingText: { type: String, default: 'Memuat...' },
+  emptyText: { type: String, default: 'Belum ada data untuk ditampilkan.' },
   emptyIcon: { type: String, default: 'mdi-inbox-outline' }
 })
 
@@ -35,22 +35,45 @@ defineEmits(['retry'])
 
 <template>
   <div>
-    <div v-if="loading" class="d-flex flex-column align-center justify-center py-10 text-medium-emphasis">
-      <v-progress-circular indeterminate color="primary" size="36" class="mb-3" />
-      <span>{{ loadingText }}</span>
+    <div
+      v-if="loading"
+      class="d-flex flex-column align-center justify-center py-12 text-medium-emphasis"
+      role="status"
+      aria-live="polite"
+    >
+      <v-progress-circular indeterminate size="36" width="3" class="mb-4" />
+      <span class="text-body-medium">{{ loadingText }}</span>
     </div>
 
-    <div v-else-if="error" class="d-flex flex-column align-center justify-center py-10 text-center">
-      <v-icon icon="mdi-alert-circle-outline" color="error" size="40" class="mb-3" />
-      <p class="text-body-1 mb-4">{{ error }}</p>
-      <v-btn color="primary" variant="tonal" @click="$emit('retry')">Try again</v-btn>
+    <div
+      v-else-if="error"
+      class="d-flex flex-column align-center justify-center text-center py-12 px-6 bg-surface rounded-xl border"
+      role="alert"
+    >
+      <v-avatar color="error" variant="tonal" size="56" class="mb-4">
+        <v-icon icon="mdi-alert-circle-outline" size="28" />
+      </v-avatar>
+      <p class="text-title-medium mb-1">Data belum bisa dimuat</p>
+      <p class="text-body-medium text-medium-emphasis mb-5 state-panel__text">{{ error }}</p>
+      <v-btn color="primary" prepend-icon="mdi-refresh" @click="$emit('retry')">Coba lagi</v-btn>
     </div>
 
-    <div v-else-if="empty" class="d-flex flex-column align-center justify-center py-10 text-center text-medium-emphasis">
-      <v-icon :icon="emptyIcon" size="40" class="mb-3" />
-      <span>{{ emptyText }}</span>
+    <div
+      v-else-if="empty"
+      class="d-flex flex-column align-center justify-center text-center py-12 px-6 bg-surface rounded-xl border border-dashed"
+    >
+      <v-avatar color="surface-light" size="56" class="mb-4">
+        <v-icon :icon="emptyIcon" color="primary" size="28" />
+      </v-avatar>
+      <p class="text-body-large text-medium-emphasis mb-0 state-panel__text">{{ emptyText }}</p>
     </div>
 
     <slot v-else />
   </div>
 </template>
+
+<style scoped>
+.state-panel__text {
+  max-width: 48ch;
+}
+</style>

@@ -8,18 +8,27 @@ import { computed } from 'vue'
 import PageHeader from '../../components/PageHeader.vue'
 
 const route = useRoute()
-const title = computed(() => route.meta.title || 'Coming soon')
+const title = computed(() => route.meta.title || 'Segera hadir')
 </script>
 
 <template>
   <div>
-    <PageHeader :title="title" subtitle="This feature is planned for an upcoming stage." />
-    <v-card class="pa-10 text-center text-medium-emphasis">
-      <v-icon icon="mdi-progress-wrench" size="48" class="mb-3" />
-      <p class="text-body-1 mb-0">
-        The backend API for this area is available. The user-facing screen will
-        be built in a later increment, after Auth and Profile are verified.
+    <PageHeader :title="title" subtitle="Fitur ini direncanakan untuk tahap berikutnya." />
+    <v-card variant="flat" class="d-flex flex-column align-center pa-8 pa-md-12 text-center">
+      <v-avatar color="surface-light" size="64" class="mb-5">
+        <v-icon icon="mdi-progress-wrench" color="primary" size="32" />
+      </v-avatar>
+      <p class="text-title-medium mb-2">Halaman ini sedang disiapkan</p>
+      <p class="text-body-large text-medium-emphasis mb-0 coming-soon__text">
+        Layanan untuk bagian ini sudah tersedia di server. Tampilannya akan dibuat
+        pada tahap berikutnya, setelah fitur Masuk dan Profil selesai diuji.
       </p>
     </v-card>
   </div>
 </template>
+
+<style scoped>
+.coming-soon__text {
+  max-width: 52ch;
+}
+</style>

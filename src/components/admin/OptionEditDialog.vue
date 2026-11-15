@@ -115,31 +115,31 @@ async function save() {
   formError.value = ''
   const payload = changedPayload.value
   if (!Object.keys(payload).length) {
-    formError.value = 'No changes to save.'
+    formError.value = 'Belum ada perubahan untuk disimpan.'
     return
   }
   if (payload.option_text !== undefined && !payload.option_text) {
-    formError.value = 'Option text cannot be empty.'
+    formError.value = 'Teks pilihan jawaban tidak boleh kosong.'
     return
   }
   // Number('') is 0, so an emptied field would silently save a score of 0.
   if (payload.score !== undefined && String(form.value.score ?? '').trim() === '') {
-    formError.value = 'Enter a score. Use 0 if this option should score nothing.'
+    formError.value = 'Isi skor. Gunakan 0 bila pilihan ini tidak mendapat skor.'
     return
   }
   if (payload.score !== undefined && (Number.isNaN(payload.score) || payload.score < 0)) {
-    formError.value = 'Score must be a number >= 0.'
+    formError.value = 'Skor harus berupa angka 0 atau lebih.'
     return
   }
   if (payload.image_attachment_id !== undefined && Number.isNaN(payload.image_attachment_id)) {
-    formError.value = 'Option image ID must be a positive integer or empty.'
+    formError.value = 'ID gambar pilihan jawaban harus bilangan bulat positif, atau kosongkan kolomnya.'
     return
   }
 
   saving.value = true
   try {
     const updated = await adminService.updateOption(props.questionId, props.option.id, payload)
-    uiStore.success('Option updated.')
+    uiStore.success('Perubahan pilihan jawaban disimpan.')
     emit('saved', updated)
     close()
   } catch (e) {
@@ -151,49 +151,56 @@ async function save() {
 </script>
 
 <template>
-  <v-dialog :model-value="modelValue" max-width="560" @update:model-value="emit('update:modelValue', $event)">
-    <v-card class="pa-2">
-      <v-card-title class="text-h6">Edit option</v-card-title>
+  <v-dialog :model-value="modelValue" max-width="560" scrollable @update:model-value="emit('update:modelValue', $event)">
+    <v-card class="pa-3">
+      <v-card-title class="text-title-large text-wrap">Ubah pilihan jawaban</v-card-title>
       <v-card-text>
         <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
           {{ formError }}
         </v-alert>
 
-        <v-textarea v-model="form.option_text" label="Option text" variant="outlined" rows="2" auto-grow />
+        <v-textarea v-model="form.option_text" label="Teks pilihan jawaban" rows="2" auto-grow />
         <div class="d-flex flex-wrap ga-4">
           <v-text-field
             v-model="form.score"
-            label="Score"
+            label="Skor"
             type="number"
-            variant="outlined"
-            density="comfortable"
-            class="flex-grow-1"
-            style="min-width: 150px"
+            class="flex-grow-1 option-edit__field"
           />
           <v-select
             v-model="form.option_order"
-            :items="[1, 2, 3, 4, 5]"
-            label="Order (A..E)"
-            variant="outlined"
-            density="comfortable"
-            class="flex-grow-1"
-            style="min-width: 150px"
+            :items="[
+              { title: 'A (urutan 1)', value: 1 },
+              { title: 'B (urutan 2)', value: 2 },
+              { title: 'C (urutan 3)', value: 3 },
+              { title: 'D (urutan 4)', value: 4 },
+              { title: 'E (urutan 5)', value: 5 }
+            ]"
+            label="Huruf pilihan"
+            hint="Mengganti huruf juga memindahkan urutan pilihan ini."
+            persistent-hint
+            class="flex-grow-1 option-edit__field"
           />
         </div>
         <v-text-field
           v-model="form.image_attachment_id"
-          label="Option image ID (optional)"
+          label="ID gambar pilihan jawaban (opsional)"
           type="number"
-          variant="outlined"
-          density="comfortable"
-          hint="Attachment ID from the Images menu. Leave empty for none."
+          hint="ID lampiran dari menu Gambar. Kosongkan bila tidak ada."
           persistent-hint
+          class="mt-2"
         />
       </v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn variant="text" :disabled="saving" @click="close">Cancel</v-btn>
-        <v-btn color="primary" variant="flat" :loading="saving" @click="save">Save changes</v-btn>
+      <v-card-actions class="justify-end ga-2">
+        <v-btn variant="text" :disabled="saving" @click="close">Batal</v-btn>
+        <v-btn color="primary" variant="flat" :loading="saving" @click="save">Simpan perubahan</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.option-edit__field {
+  min-width: 150px;
+}
+</style>

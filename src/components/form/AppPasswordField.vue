@@ -16,7 +16,7 @@ import { useField } from 'vee-validate'
 /** @type {AppPasswordFieldProps} */
 const props = defineProps({
   name: { type: String, required: true },
-  label: { type: String, default: 'Password' },
+  label: { type: String, default: 'Kata sandi' },
   rules: { type: [Function, Object, String], default: undefined },
   autocomplete: { type: String, default: 'current-password' },
   serverError: { type: String, default: '' }
@@ -42,7 +42,7 @@ watch(
     :label="label"
     :type="show ? 'text' : 'password'"
     :autocomplete="autocomplete"
-    :append-inner-icon="show ? 'mdi-eye-off' : 'mdi-eye'"
+    :append-inner-icon="show ? 'mdi-eye-off-outline' : 'mdi-eye-outline'"
     :error-messages="errorMessage ? [errorMessage] : []"
     @click:append-inner="show = !show"
     @blur="handleBlur"

@@ -42,12 +42,12 @@ async function load() {
 /** @type {import('vue').ComputedRef<'success'|'pending'>} */
 const state = computed(() => (isPremium.value ? 'success' : 'pending'))
 const title = computed(() =>
-  isPremium.value ? 'Premium is active' : 'Payment received'
+  isPremium.value ? 'Premium sudah aktif' : 'Pembayaran diterima'
 )
 const message = computed(() =>
   isPremium.value
-    ? 'Thanks for upgrading. You now have full access to Premium content.'
-    : 'We have your payment. Premium usually activates within a short while once the payment provider confirms it. This page reflects your current status.'
+    ? 'Terima kasih sudah upgrade. Sekarang kamu bisa membuka semua konten Premium.'
+    : 'Pembayaranmu sudah kami terima. Premium biasanya aktif tidak lama setelah penyedia pembayaran mengonfirmasi. Halaman ini menampilkan status terbarumu.'
 )
 
 onMounted(load)
@@ -55,11 +55,11 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Payment result" />
+    <PageHeader title="Status pembayaran" />
 
     <StatePanel :loading="loading" :error="error" @retry="load">
       <v-row justify="center">
-        <v-col cols="12" md="7">
+        <v-col cols="12" md="8" lg="7">
           <PaymentStatus
             :state="state"
             :title="title"
@@ -68,25 +68,25 @@ onMounted(load)
             :transaction="activeTransaction"
           >
             <template #actions>
-              <v-btn color="primary" variant="flat" :to="{ name: 'user-dashboard' }" prepend-icon="mdi-view-dashboard-outline">
-                Go to dashboard
+              <v-btn color="primary" variant="flat" :to="{ name: 'user-dashboard' }" prepend-icon="mdi-home-variant-outline">
+                Ke Beranda
               </v-btn>
-              <v-btn variant="tonal" :to="{ name: 'user-subscription' }" prepend-icon="mdi-crown-outline">
-                View subscription
+              <v-btn variant="tonal" color="primary" :to="{ name: 'user-subscription' }" prepend-icon="mdi-crown-outline">
+                Lihat langganan
               </v-btn>
               <v-btn variant="text" :to="{ name: 'user-transactions' }" prepend-icon="mdi-receipt-text-outline">
-                Transactions
+                Lihat transaksi
               </v-btn>
             </template>
           </PaymentStatus>
 
-          <v-card v-if="subscription" variant="tonal" class="pa-4 mt-4 text-center">
-            <div class="d-flex align-center justify-center ga-2">
-              <span class="text-medium-emphasis">Current plan</span>
+          <v-card v-if="subscription" variant="flat" class="pa-4 mt-4 text-center">
+            <div class="d-flex align-center justify-center flex-wrap ga-2">
+              <span class="text-body-medium text-medium-emphasis">Paket saat ini</span>
               <StatusChip :value="subscription.status" />
             </div>
-            <div v-if="isPremium && subscription.expired_at" class="text-caption text-medium-emphasis mt-1">
-              Valid until {{ formatDateOnly(subscription.expired_at) }}
+            <div v-if="isPremium && subscription.expired_at" class="text-body-small text-medium-emphasis mt-1">
+              Berlaku sampai {{ formatDateOnly(subscription.expired_at) }}
             </div>
           </v-card>
         </v-col>

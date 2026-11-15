@@ -38,14 +38,14 @@ const emit = defineEmits(['navigate'])
 const legend = computed(() =>
   props.review
     ? [
-        { label: 'Correct', color: 'success' },
-        { label: 'Incorrect', color: 'error' },
-        { label: 'Not answered', color: 'grey' }
+        { label: 'Benar', color: 'success' },
+        { label: 'Salah', color: 'error' },
+        { label: 'Tidak dijawab', color: 'secondary' }
       ]
     : [
-        { label: 'Answered', color: 'primary' },
-        { label: 'Not answered', color: 'grey' },
-        { label: 'Current', color: 'info' }
+        { label: 'Terjawab', color: 'primary' },
+        { label: 'Belum dijawab', color: 'secondary' },
+        { label: 'Sedang dibuka', color: 'info' }
       ]
 )
 
@@ -60,44 +60,110 @@ function tileColor(question, index) {
   if (props.review) {
     // In review mode answers map carries { correct: boolean } per question.
     const state = props.answers[question.id]
-    if (!state) return 'grey'
+    if (!state) return 'secondary'
     return state.correct ? 'success' : 'error'
   }
-  return answered ? 'primary' : 'grey'
+  return answered ? 'primary' : 'secondary'
 }
 
 /**
- * @param {number} index
- * @returns {'flat'|'tonal'}
+ * Presentational: LJK bubble modifier for a legend color.
+ * @param {string} color
+ * @returns {string}
  */
-function tileVariant(index) {
-  return !props.review && index === props.activeIndex ? 'flat' : 'tonal'
+function legendBubble(color) {
+  return (
+    {
+      primary: 'app-bubble--filled',
+      success: 'app-bubble--correct',
+      error: 'app-bubble--wrong',
+      info: 'app-bubble--current'
+    }[color] || ''
+  )
+}
+
+/**
+ * Presentational: LJK bubble modifiers for a question button. The current
+ * question keeps its answered fill and gets the ring on top.
+ * @param {NavigatorQuestion} question
+ * @param {number} index
+ * @returns {Record<string, boolean>}
+ */
+function bubbleClass(question, index) {
+  const color = tileColor(question, index)
+  return {
+    'app-bubble--filled': color === 'primary' || (color === 'info' && Boolean(props.answers[question.id])),
+    'app-bubble--current': color === 'info',
+    'app-bubble--correct': color === 'success',
+    'app-bubble--wrong': color === 'error'
+  }
+}
+
+/**
+ * Presentational: accessible name for a question button, e.g. "Soal 5, terjawab".
+ * @param {NavigatorQuestion} question
+ * @param {number} index
+ * @returns {string}
+ */
+function bubbleLabel(question, index) {
+  let state
+  if (props.review) {
+    const color = tileColor(question, index)
+    state = color === 'success' ? 'benar' : color === 'error' ? 'salah' : 'tidak dijawab'
+  } else {
+    state = props.answers[question.id] ? 'terjawab' : 'belum dijawab'
+  }
+  return `Soal ${question.number}, ${state}`
+}
+
+/**
+ * Presentational: small icon on review bubbles so correct and wrong are not
+ * told apart by color alone.
+ * @param {NavigatorQuestion} question
+ * @param {number} index
+ * @returns {string}
+ */
+function reviewIcon(question, index) {
+  if (!props.review) return ''
+  const color = tileColor(question, index)
+  if (color === 'success') return 'mdi-check'
+  if (color === 'error') return 'mdi-close'
+  return ''
 }
 </script>
 
 <template>
-  <v-card variant="outlined" class="pa-4">
-    <h3 class="text-subtitle-2 font-weight-bold mb-3">Questions</h3>
-    <div class="nav-grid mb-4">
-      <v-btn
+  <v-card class="pa-4 pa-md-5">
+    <h2 id="question-nav-title" class="text-title-small mb-4">Daftar soal</h2>
+    <nav class="nav-grid mb-5" aria-labelledby="question-nav-title">
+      <button
         v-for="(q, index) in questions"
         :key="q.id"
-        :color="tileColor(q, index)"
-        :variant="tileVariant(index)"
-        size="small"
-        class="nav-tile"
+        type="button"
+        class="app-bubble nav-bubble"
+        :class="bubbleClass(q, index)"
+        :aria-label="bubbleLabel(q, index)"
+        :aria-current="!review && index === activeIndex ? 'step' : undefined"
         @click="emit('navigate', index)"
       >
         {{ q.number }}
-      </v-btn>
-    </div>
-    <v-divider class="mb-3" />
-    <div class="d-flex flex-column ga-2">
-      <div v-for="item in legend" :key="item.label" class="d-flex align-center ga-2">
-        <span class="legend-swatch" :class="`bg-${item.color}`" />
-        <span class="text-caption text-medium-emphasis">{{ item.label }}</span>
-      </div>
-    </div>
+        <v-icon
+          v-if="reviewIcon(q, index)"
+          :icon="reviewIcon(q, index)"
+          :color="tileColor(q, index)"
+          size="12"
+          class="nav-bubble__badge"
+          aria-hidden="true"
+        />
+      </button>
+    </nav>
+    <v-divider class="mb-4" />
+    <ul class="nav-legend d-flex flex-wrap gc-4 gr-2 text-body-small text-medium-emphasis">
+      <li v-for="item in legend" :key="item.label" class="d-inline-flex align-center ga-2">
+        <span class="app-bubble app-bubble--sm" :class="legendBubble(item.color)" aria-hidden="true" />
+        {{ item.label }}
+      </li>
+    </ul>
   </v-card>
 </template>
 
@@ -106,15 +172,37 @@ function tileVariant(index) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
   gap: 8px;
+  justify-items: center;
 }
-.nav-tile {
-  min-width: 0;
+
+/* Native button rendered as an LJK bubble; 40px keeps a comfortable touch
+   target. Only properties the bubble modifiers do not set are styled here. */
+.nav-bubble {
+  --app-bubble-size: 40px;
+  position: relative;
   padding: 0;
+  cursor: pointer;
 }
-.legend-swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  display: inline-block;
+
+.nav-bubble:not(.app-bubble--filled):not(.app-bubble--correct):not(.app-bubble--wrong):not(.app-bubble--current):hover {
+  border-color: rgb(var(--v-theme-primary));
+  background: rgb(var(--v-theme-surface-light));
+}
+
+.nav-bubble__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  inline-size: 16px;
+  block-size: 16px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-surface));
+  box-shadow: 0 0 0 1.5px currentColor;
+}
+
+.nav-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 </style>

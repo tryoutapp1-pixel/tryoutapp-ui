@@ -23,11 +23,11 @@ const typeOptions = [
   { title: 'Try Out', value: 'TRYOUT' },
   { title: 'Latihan', value: 'LATIHAN' }
 ]
-const ratingOptions = [5, 4, 3, 2, 1].map((value) => ({ title: `${value} star${value === 1 ? '' : 's'}`, value }))
+const ratingOptions = [5, 4, 3, 2, 1].map((value) => ({ title: `${value} bintang`, value }))
 const difficultyOptions = [
-  { title: 'Easy', value: 'EASY' },
-  { title: 'Medium', value: 'MEDIUM' },
-  { title: 'Hard', value: 'HARD' }
+  { title: 'Mudah', value: 'EASY' },
+  { title: 'Sedang', value: 'MEDIUM' },
+  { title: 'Sulit', value: 'HARD' }
 ]
 /** @type {Record<string, string>} */
 const DIFFICULTY_COLORS = { EASY: 'success', MEDIUM: 'warning', HARD: 'error' }
@@ -64,17 +64,17 @@ onMounted(() => {
 
 <template>
   <div>
-    <PageHeader title="Feedback" subtitle="Ratings and comments learners left after finishing an assessment." />
+    <PageHeader title="Masukan" subtitle="Rating dan komentar yang diberikan pengguna setelah menyelesaikan paket soal." />
 
-    <v-card variant="outlined" class="pa-4 mb-4">
-      <v-row dense>
+    <v-card variant="flat" class="pa-4 mb-6">
+      <v-row dense align="center">
         <v-col cols="12" md="4">
           <v-autocomplete
             :model-value="filters.assessment_id"
             :items="assessmentOptions"
-            label="Assessment"
-            variant="outlined"
-            density="comfortable"
+            label="Paket soal"
+            prepend-inner-icon="mdi-magnify"
+            no-data-text="Paket soal tidak ditemukan"
             clearable
             hide-details
             @update:model-value="setFilter('assessment_id', $event)"
@@ -84,9 +84,7 @@ onMounted(() => {
           <v-select
             :model-value="filters.assessment_type"
             :items="typeOptions"
-            label="Type"
-            variant="outlined"
-            density="comfortable"
+            label="Jenis"
             clearable
             hide-details
             @update:model-value="setFilter('assessment_type', $event)"
@@ -97,8 +95,6 @@ onMounted(() => {
             :model-value="filters.rating"
             :items="ratingOptions"
             label="Rating"
-            variant="outlined"
-            density="comfortable"
             clearable
             hide-details
             @update:model-value="setFilter('rating', $event)"
@@ -108,74 +104,95 @@ onMounted(() => {
           <v-select
             :model-value="filters.difficulty"
             :items="difficultyOptions"
-            label="Difficulty"
-            variant="outlined"
-            density="comfortable"
+            label="Kesulitan"
             clearable
             hide-details
             @update:model-value="setFilter('difficulty', $event)"
           />
         </v-col>
         <v-col cols="12" md="2" class="d-flex align-center">
-          <v-btn variant="text" block :disabled="!hasFilters || loading" @click="store.resetFilters()">Clear filters</v-btn>
+          <v-btn
+            variant="text"
+            color="primary"
+            prepend-icon="mdi-filter-remove-outline"
+            block
+            :disabled="!hasFilters || loading"
+            @click="store.resetFilters()"
+          >
+            Reset filter
+          </v-btn>
         </v-col>
       </v-row>
     </v-card>
 
-    <div class="d-flex align-center flex-wrap ga-6 mb-4">
-      <div>
-        <div class="text-caption text-medium-emphasis">Feedback</div>
-        <div class="text-h6 font-weight-bold">{{ summary.total }}</div>
-      </div>
-      <div>
-        <div class="text-caption text-medium-emphasis">Average rating</div>
-        <div class="d-flex align-center ga-2">
-          <span class="text-h6 font-weight-bold">{{ summary.average_rating ?? '-' }}</span>
-          <v-rating
-            v-if="summary.average_rating !== null"
-            :model-value="summary.average_rating"
-            half-increments
-            readonly
-            density="compact"
-            size="small"
-            color="amber"
-            active-color="amber"
-            :aria-label="`Average rating ${summary.average_rating} out of 5`"
-          />
-        </div>
-      </div>
-    </div>
+    <v-row dense class="mb-4">
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card variant="flat" class="d-flex align-center ga-4 pa-4 h-100">
+          <v-avatar color="surface-light" rounded="lg" size="44">
+            <v-icon icon="mdi-message-text-outline" color="primary" />
+          </v-avatar>
+          <div>
+            <div class="text-label-large text-medium-emphasis mb-1">Jumlah masukan</div>
+            <div class="app-figure text-headline-medium">{{ summary.total }}</div>
+          </div>
+        </v-card>
+      </v-col>
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card variant="flat" class="d-flex align-center ga-4 pa-4 h-100">
+          <v-avatar color="surface-light" rounded="lg" size="44">
+            <v-icon icon="mdi-star-outline" color="premium-ink" />
+          </v-avatar>
+          <div>
+            <div class="text-label-large text-medium-emphasis mb-1">Rata-rata rating</div>
+            <div class="d-flex flex-wrap align-center ga-2">
+              <span class="app-figure text-headline-medium">{{ summary.average_rating ?? '-' }}</span>
+              <v-rating
+                v-if="summary.average_rating !== null"
+                :model-value="summary.average_rating"
+                half-increments
+                readonly
+                density="compact"
+                size="small"
+                color="premium-ink"
+                active-color="premium-ink"
+                :aria-label="`Rata-rata rating ${summary.average_rating} dari 5`"
+              />
+            </div>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <StatePanel
       :loading="loading"
       :error="error"
       :empty="!loading && !error && items.length === 0"
-      :empty-text="hasFilters ? 'No feedback matches these filters.' : 'No feedback yet.'"
+      :empty-text="hasFilters ? 'Tidak ada masukan yang cocok dengan filter ini. Coba ubah atau reset filter.' : 'Belum ada masukan dari pengguna.'"
       empty-icon="mdi-message-outline"
       @retry="store.fetchList(pagination.page)"
     >
-      <v-card>
-        <v-table>
+      <v-card variant="flat">
+        <v-table hover>
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Assessment</th>
-              <th>Learner</th>
+              <th>Tanggal</th>
+              <th>Paket soal</th>
+              <th>Pengguna</th>
               <th>Rating</th>
-              <th>Difficulty</th>
-              <th>Comment</th>
+              <th>Kesulitan</th>
+              <th>Komentar</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="f in items" :key="f.id">
               <td class="text-no-wrap">{{ formatDate(f.created_at) }}</td>
-              <td>
+              <td class="py-2">
                 <div class="font-weight-medium">{{ f.assessment_title }}</div>
                 <StatusChip :value="f.assessment_type" class="mt-1" />
               </td>
-              <td>
+              <td class="py-2">
                 <div>{{ f.user_name }}</div>
-                <div class="text-caption text-medium-emphasis">{{ f.user_email }}</div>
+                <div class="text-body-small text-medium-emphasis">{{ f.user_email }}</div>
               </td>
               <td class="text-no-wrap">
                 <v-rating
@@ -183,19 +200,19 @@ onMounted(() => {
                   readonly
                   density="compact"
                   size="x-small"
-                  color="amber"
-                  active-color="amber"
-                  :aria-label="`${f.rating} out of 5`"
+                  color="premium-ink"
+                  active-color="premium-ink"
+                  :aria-label="`${f.rating} dari 5`"
                 />
               </td>
               <td>
                 <v-chip size="small" variant="tonal" :color="DIFFICULTY_COLORS[f.difficulty]">
-                  {{ f.difficulty.charAt(0) + f.difficulty.slice(1).toLowerCase() }}
+                  {{ difficultyOptions.find((o) => o.value === f.difficulty)?.title ?? f.difficulty }}
                 </v-chip>
               </td>
-              <td class="comment-cell">
+              <td class="comment-cell py-2">
                 <span v-if="f.comment" class="pre-line">{{ f.comment }}</span>
-                <span v-else class="text-medium-emphasis">No comment</span>
+                <span v-else class="text-medium-emphasis">Tanpa komentar</span>
               </td>
             </tr>
           </tbody>

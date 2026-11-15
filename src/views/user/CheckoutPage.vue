@@ -61,7 +61,7 @@ async function proceed() {
   try {
     const invoice = await store.ensureInvoice()
     if (!invoice || !invoice.snap_token) {
-      error.value = 'Could not prepare your invoice. Please try again.'
+      error.value = 'Tagihan belum bisa disiapkan. Coba lagi.'
       return
     }
     router.push({ name: 'user-payment' })
@@ -75,13 +75,31 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Checkout" subtitle="Review your purchase and choose how to pay.">
+    <PageHeader title="Upgrade ke Premium" subtitle="Periksa ringkasan pesanan, lalu pilih metode pembayaran.">
       <template #actions>
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: 'user-subscription' }">
-          Back
+          Kembali
         </v-btn>
       </template>
     </PageHeader>
+
+    <!-- Static step indicator: this page is step 1 of 3. -->
+    <ol class="checkout-steps d-flex align-center flex-wrap ga-3 pa-0 mt-0 mb-6" aria-label="Langkah pembelian">
+      <li class="d-flex align-center ga-2" aria-current="step">
+        <span class="app-bubble app-bubble--sm app-bubble--filled app-bubble--current">1</span>
+        <span class="text-label-large">Ringkasan</span>
+      </li>
+      <li class="checkout-steps__sep d-none d-sm-block" aria-hidden="true" />
+      <li class="d-flex align-center ga-2 text-medium-emphasis">
+        <span class="app-bubble app-bubble--sm">2</span>
+        <span class="text-label-large">Pembayaran</span>
+      </li>
+      <li class="checkout-steps__sep d-none d-sm-block" aria-hidden="true" />
+      <li class="d-flex align-center ga-2 text-medium-emphasis">
+        <span class="app-bubble app-bubble--sm">3</span>
+        <span class="text-label-large">Selesai</span>
+      </li>
+    </ol>
 
     <StatePanel :loading="loading || creatingPayment" :error="error" @retry="load">
       <v-alert
@@ -90,8 +108,8 @@ onMounted(load)
         variant="tonal"
         class="mb-4"
       >
-        Online payment is not configured in this environment, so an invoice
-        cannot be created. You can still review the plan below.
+        Pembayaran online belum dikonfigurasi di lingkungan ini, jadi tagihan
+        belum bisa dibuat. Kamu tetap bisa melihat detail paket di bawah.
       </v-alert>
 
       <v-row>
@@ -99,26 +117,48 @@ onMounted(load)
           <PaymentMethodSelect v-model="method" />
         </v-col>
         <v-col cols="12" md="5">
-          <InvoiceSummary :plan="premiumPlan" :invoice="activeInvoice" />
+          <div class="checkout-aside">
+            <InvoiceSummary :plan="premiumPlan" :invoice="activeInvoice" />
 
-          <v-btn
-            color="primary"
-            variant="flat"
-            size="large"
-            block
-            class="mt-4"
-            prepend-icon="mdi-arrow-right-circle"
-            :loading="creatingPayment"
-            :disabled="!canPay || creatingPayment"
-            @click="proceed"
-          >
-            Proceed to payment
-          </v-btn>
-          <p class="text-caption text-medium-emphasis text-center mt-2 mb-0">
-            You will complete the payment securely in the next step.
-          </p>
+            <v-btn
+              color="primary"
+              variant="flat"
+              size="large"
+              block
+              class="mt-4"
+              append-icon="mdi-arrow-right"
+              :loading="creatingPayment"
+              :disabled="!canPay || creatingPayment"
+              @click="proceed"
+            >
+              Lanjut ke pembayaran
+            </v-btn>
+            <p class="d-flex align-center justify-center ga-1 text-body-small text-medium-emphasis text-center mt-3 mb-0">
+              <v-icon icon="mdi-lock-outline" size="14" />
+              Kamu akan menyelesaikan pembayaran dengan aman di langkah berikutnya.
+            </p>
+          </div>
         </v-col>
       </v-row>
     </StatePanel>
   </div>
 </template>
+
+<style scoped>
+.checkout-steps {
+  list-style: none;
+}
+
+.checkout-steps__sep {
+  inline-size: 28px;
+  border-top: 2px solid rgb(var(--app-line));
+}
+
+/* Keep the total and the action in view while the method list scrolls. */
+@media (min-width: 960px) {
+  .checkout-aside {
+    position: sticky;
+    top: 88px;
+  }
+}
+</style>

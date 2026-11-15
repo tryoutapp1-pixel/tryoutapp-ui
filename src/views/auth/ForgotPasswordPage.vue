@@ -19,7 +19,7 @@ const onSubmit = handleSubmit(async (values) => {
   try {
     const res = await authService.forgotPassword(values.email)
     message.value = (res && res.message) ||
-      'If an active account exists for this email, a reset link has been sent.'
+      'Jika ada akun aktif dengan email ini, tautan untuk membuat kata sandi baru sudah dikirim.'
     sent.value = true
   } catch (error) {
     message.value = error.message
@@ -31,14 +31,14 @@ const onSubmit = handleSubmit(async (values) => {
 </script>
 
 <template>
-  <v-container class="py-12" style="max-width: 460px">
-    <v-card class="pa-6">
-      <h1 class="text-h5 font-weight-bold mb-1">Forgot password</h1>
-      <p class="text-body-2 text-medium-emphasis mb-6">
-        We'll email you a link to reset your password.
+  <div class="app-content px-4 pt-6 pt-md-16 pb-12 pb-md-16">
+    <v-card class="auth-card rounded-xl pa-6 pa-sm-10 mx-auto">
+      <h1 class="text-headline-medium mb-2">Lupa kata sandi</h1>
+      <p class="text-body-large text-medium-emphasis mb-8">
+        Kami akan mengirim tautan untuk membuat kata sandi baru ke email kamu.
       </p>
 
-      <v-alert v-if="sent" type="info" variant="tonal" density="comfortable" class="mb-4">
+      <v-alert v-if="sent" type="info" variant="tonal" density="comfortable" class="mb-6">
         {{ message }}
       </v-alert>
 
@@ -50,15 +50,21 @@ const onSubmit = handleSubmit(async (values) => {
           autocomplete="email"
           :rules="compose(required('Email'), emailRule)"
         />
-        <v-btn type="submit" color="primary" size="large" block :loading="submitting">
-          Send reset link
+        <v-btn type="submit" color="primary" size="large" block :loading="submitting" class="mt-2">
+          Kirim tautan
         </v-btn>
       </form>
 
-      <v-divider class="my-5" />
-      <p class="text-body-2 text-center mb-0">
-        <RouterLink to="/login" class="text-primary text-decoration-none">Back to login</RouterLink>
+      <p class="text-body-medium text-center mt-8 mb-0">
+        <RouterLink to="/login" class="app-link">Kembali ke halaman masuk</RouterLink>
       </p>
     </v-card>
-  </v-container>
+  </div>
 </template>
+
+<style scoped>
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+}
+</style>

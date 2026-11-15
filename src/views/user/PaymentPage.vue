@@ -84,10 +84,10 @@ async function pay() {
       router.replace({ name: 'user-payment-failed' })
     } else {
       // 'close' with no terminal change: stay here; the invoice is reusable.
-      uiStore.notify('Payment window closed. You can resume the payment anytime.', 'info')
+      uiStore.notify('Jendela pembayaran ditutup. Kamu bisa melanjutkan pembayaran kapan saja.', 'info')
     }
   } catch (e) {
-    uiStore.error(e.message || 'The payment could not be started.')
+    uiStore.error(e.message || 'Pembayaran belum bisa dimulai. Coba lagi.')
   } finally {
     paying.value = false
   }
@@ -98,17 +98,38 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Payment" subtitle="Complete your Premium payment.">
+    <PageHeader title="Pembayaran" subtitle="Selesaikan pembayaran untuk upgrade ke Premium.">
       <template #actions>
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: 'user-checkout' }">
-          Back
+          Kembali
         </v-btn>
       </template>
     </PageHeader>
 
+    <!-- Static step indicator: this page is step 2 of 3. -->
+    <ol class="payment-steps d-flex align-center flex-wrap ga-3 pa-0 mt-0 mb-6" aria-label="Langkah pembelian">
+      <li class="d-flex align-center ga-2 text-medium-emphasis">
+        <span class="app-bubble app-bubble--sm app-bubble--filled">
+          <v-icon icon="mdi-check" size="14" aria-hidden="true" />
+        </span>
+        <span class="text-label-large">Ringkasan</span>
+        <span class="d-sr-only">(selesai)</span>
+      </li>
+      <li class="payment-steps__sep payment-steps__sep--done d-none d-sm-block" aria-hidden="true" />
+      <li class="d-flex align-center ga-2" aria-current="step">
+        <span class="app-bubble app-bubble--sm app-bubble--filled app-bubble--current">2</span>
+        <span class="text-label-large">Pembayaran</span>
+      </li>
+      <li class="payment-steps__sep d-none d-sm-block" aria-hidden="true" />
+      <li class="d-flex align-center ga-2 text-medium-emphasis">
+        <span class="app-bubble app-bubble--sm">3</span>
+        <span class="text-label-large">Selesai</span>
+      </li>
+    </ol>
+
     <StatePanel :loading="loading" :error="error" @retry="load">
       <v-row justify="center">
-        <v-col cols="12" md="6">
+        <v-col cols="12" md="7" lg="6">
           <InvoiceSummary :plan="premiumPlan" :invoice="invoice" />
 
           <v-alert
@@ -117,7 +138,7 @@ onMounted(load)
             variant="tonal"
             class="mt-4 mb-0"
           >
-            Online payment is not configured in this environment.
+            Pembayaran online belum dikonfigurasi di lingkungan ini.
           </v-alert>
 
           <template v-else>
@@ -132,11 +153,11 @@ onMounted(load)
               :disabled="paying || !invoice"
               @click="pay"
             >
-              Pay now
+              Bayar sekarang
             </v-btn>
-            <p class="text-caption text-medium-emphasis text-center mt-3 mb-0">
-              Your Premium access activates once we receive confirmation from the
-              payment provider. This can take a short while after you pay.
+            <p class="text-body-small text-medium-emphasis text-center mx-auto mt-3 mb-0 payment-note">
+              Akses Premium aktif setelah kami menerima konfirmasi dari penyedia
+              pembayaran. Ini bisa memakan waktu sebentar setelah kamu membayar.
             </p>
           </template>
         </v-col>
@@ -144,3 +165,22 @@ onMounted(load)
     </StatePanel>
   </div>
 </template>
+
+<style scoped>
+.payment-steps {
+  list-style: none;
+}
+
+.payment-steps__sep {
+  inline-size: 28px;
+  border-top: 2px solid rgb(var(--app-line));
+}
+
+.payment-steps__sep--done {
+  border-top-color: rgb(var(--v-theme-primary));
+}
+
+.payment-note {
+  max-width: 44ch;
+}
+</style>

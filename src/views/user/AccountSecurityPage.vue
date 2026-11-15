@@ -30,7 +30,7 @@ const onSubmit = handleSubmit(async (formValues) => {
       currentPassword: formValues.currentPassword,
       newPassword: formValues.newPassword
     })
-    uiStore.success('Password changed successfully.')
+    uiStore.success('Kata sandi berhasil diubah.')
     resetForm()
   } catch (error) {
     fieldErrors.value = error.fieldErrors || {}
@@ -43,9 +43,21 @@ const onSubmit = handleSubmit(async (formValues) => {
 
 <template>
   <div>
-    <PageHeader title="Change password" subtitle="Update your account password." />
+    <PageHeader title="Ubah kata sandi" subtitle="Perbarui kata sandi akunmu." />
 
-    <v-card class="pa-6" max-width="560">
+    <v-card class="pa-5 pa-md-6" max-width="640">
+      <div class="d-flex align-center ga-3 mb-6">
+        <v-avatar color="surface-light" rounded="lg" size="44">
+          <v-icon icon="mdi-lock-outline" color="primary" />
+        </v-avatar>
+        <div>
+          <h2 class="text-title-large mb-0">Kata sandi</h2>
+          <p class="text-body-small text-medium-emphasis mb-0">
+            Masukkan kata sandi saat ini, lalu buat kata sandi baru minimal 8 karakter.
+          </p>
+        </div>
+      </div>
+
       <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
         {{ formError }}
       </v-alert>
@@ -53,27 +65,28 @@ const onSubmit = handleSubmit(async (formValues) => {
       <form novalidate @submit.prevent="onSubmit">
         <AppPasswordField
           name="currentPassword"
-          label="Current password"
+          label="Kata sandi saat ini"
           autocomplete="current-password"
           :rules="required('Current password')"
           :server-error="fieldErrors.currentPassword"
         />
+        <v-divider class="mt-1 mb-6" />
         <AppPasswordField
           name="newPassword"
-          label="New password"
+          label="Kata sandi baru"
           autocomplete="new-password"
           :rules="compose(required('New password'), passwordRule)"
           :server-error="fieldErrors.newPassword"
         />
         <AppPasswordField
           name="confirmPassword"
-          label="Confirm new password"
+          label="Ulangi kata sandi baru"
           autocomplete="new-password"
           :rules="compose(required('Confirm password'), matches(() => values.newPassword, 'Passwords do not match'))"
         />
         <div class="d-flex justify-end mt-2">
           <v-btn type="submit" color="primary" variant="flat" :loading="submitting">
-            Update password
+            Ubah kata sandi
           </v-btn>
         </div>
       </form>

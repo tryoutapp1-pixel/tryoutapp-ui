@@ -58,9 +58,9 @@ function openUpload() {
 const onUpload = handleSubmit(async (formValues) => {
   const picked = Array.isArray(file.value) ? file.value[0] : file.value
   fileError.value = ''
-  typeError.value = sectionType.value ? '' : 'Select TWK, TIU, or TKP.'
-  if (!picked) fileError.value = 'Choose a PDF file.'
-  else if (picked.size > MAX_BYTES) fileError.value = 'The PDF is larger than 25 MB.'
+  typeError.value = sectionType.value ? '' : 'Pilih TWK, TIU, atau TKP.'
+  if (!picked) fileError.value = 'Pilih file PDF.'
+  else if (picked.size > MAX_BYTES) fileError.value = 'Ukuran PDF lebih dari 25 MB. Pilih file yang lebih kecil.'
   if (fileError.value || typeError.value) return
 
   try {
@@ -71,7 +71,7 @@ const onUpload = handleSubmit(async (formValues) => {
       access_type: accessType.value,
       file: picked
     })
-    uiStore.success('Material uploaded.')
+    uiStore.success('Materi diunggah.')
     showUpload.value = false
   } catch (e) {
     uiStore.error(e.message)
@@ -83,7 +83,7 @@ async function toggleRelease(item) {
   try {
     const next = !isReleased(item.is_released)
     await store.setReleased(item.id, next)
-    uiStore.success(next ? 'Material released.' : 'Material unreleased.')
+    uiStore.success(next ? 'Materi diterbitkan.' : 'Terbit materi dibatalkan.')
   } catch (e) {
     uiStore.error(e.message)
   }
@@ -105,7 +105,7 @@ async function doDelete() {
   deleting.value = true
   try {
     await store.remove(target.value.id)
-    uiStore.success('Material deleted.')
+    uiStore.success('Materi dihapus.')
     confirmOpen.value = false
   } catch (e) {
     uiStore.error(e.message)
@@ -119,9 +119,9 @@ onMounted(() => load(1))
 
 <template>
   <div>
-    <PageHeader title="Materials" subtitle="Learning materials (PDF). Release to make them visible to learners.">
+    <PageHeader title="Materi" subtitle="Materi belajar dalam format PDF. Terbitkan materi agar bisa dilihat pengguna.">
       <template #actions>
-        <v-btn color="primary" prepend-icon="mdi-upload" @click="openUpload">Upload material</v-btn>
+        <v-btn color="primary" prepend-icon="mdi-upload" @click="openUpload">Unggah materi</v-btn>
       </template>
     </PageHeader>
 
@@ -129,20 +129,20 @@ onMounted(() => load(1))
       :loading="loading"
       :error="error"
       :empty="!loading && !error && items.length === 0"
-      empty-text="No materials yet."
+      empty-text="Belum ada materi. Unggah materi pertama lewat tombol Unggah materi."
       empty-icon="mdi-book-off-outline"
       @retry="load(pagination.page)"
     >
-      <v-card>
-        <v-table>
+      <v-card variant="flat">
+        <v-table hover>
           <thead>
             <tr>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Access</th>
+              <th>Judul</th>
+              <th>Jenis</th>
+              <th>Akses</th>
               <th>Status</th>
-              <th>Created</th>
-              <th class="text-right">Actions</th>
+              <th>Dibuat</th>
+              <th class="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -150,33 +150,48 @@ onMounted(() => load(1))
               <td class="font-weight-medium">{{ m.title }}</td>
               <td><StatusChip :value="m.type" /></td>
               <td><StatusChip :value="m.access_type" /></td>
-              <td><StatusChip :value="isReleased(m.is_released) ? 'RELEASED' : 'UNRELEASED'" /></td>
-              <td>{{ formatDate(m.created_at) }}</td>
-              <td class="text-right">
-                <v-btn
-                  size="small"
-                  variant="text"
-                  icon="mdi-eye-outline"
-                  aria-label="Open material"
-                  @click="router.push(`/admin/materials/${m.id}`)"
-                />
-                <v-btn
-                  size="small"
-                  variant="text"
-                  :icon="isReleased(m.is_released) ? 'mdi-eye-off-outline' : 'mdi-check-circle-outline'"
-                  :color="isReleased(m.is_released) ? 'warning' : 'success'"
-                  :title="isReleased(m.is_released) ? 'Unrelease' : 'Release'"
-                  :aria-label="isReleased(m.is_released) ? 'Unrelease material' : 'Release material'"
-                  @click="toggleRelease(m)"
-                />
-                <v-btn
-                  size="small"
-                  variant="text"
-                  color="error"
-                  icon="mdi-delete-outline"
-                  aria-label="Delete material"
-                  @click="askDelete(m)"
-                />
+              <td class="text-no-wrap"><StatusChip :value="isReleased(m.is_released) ? 'RELEASED' : 'UNRELEASED'" /></td>
+              <td class="text-no-wrap">{{ formatDate(m.created_at) }}</td>
+              <td class="text-right text-no-wrap">
+                <v-tooltip text="Buka materi">
+                  <template #activator="{ props: tip }">
+                    <v-btn
+                      v-bind="tip"
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      icon="mdi-eye-outline"
+                      aria-label="Buka materi"
+                      @click="router.push(`/admin/materials/${m.id}`)"
+                    />
+                  </template>
+                </v-tooltip>
+                <v-tooltip :text="isReleased(m.is_released) ? 'Batalkan terbit' : 'Terbitkan'">
+                  <template #activator="{ props: tip }">
+                    <v-btn
+                      v-bind="tip"
+                      size="small"
+                      variant="text"
+                      :icon="isReleased(m.is_released) ? 'mdi-eye-off-outline' : 'mdi-check-circle-outline'"
+                      :color="isReleased(m.is_released) ? 'warning' : 'success'"
+                      :aria-label="isReleased(m.is_released) ? 'Batalkan terbit materi' : 'Terbitkan materi'"
+                      @click="toggleRelease(m)"
+                    />
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Hapus materi">
+                  <template #activator="{ props: tip }">
+                    <v-btn
+                      v-bind="tip"
+                      size="small"
+                      variant="text"
+                      color="error"
+                      icon="mdi-delete-outline"
+                      aria-label="Hapus materi"
+                      @click="askDelete(m)"
+                    />
+                  </template>
+                </v-tooltip>
               </td>
             </tr>
           </tbody>
@@ -194,38 +209,49 @@ onMounted(() => load(1))
     </StatePanel>
 
     <v-dialog v-model="showUpload" max-width="560">
-      <v-card class="pa-2">
-        <v-card-title class="text-h6">Upload material</v-card-title>
+      <v-card class="pa-3">
+        <v-card-title class="text-title-large text-wrap">Unggah materi</v-card-title>
         <v-card-text>
           <form novalidate @submit.prevent="onUpload">
-            <AppTextField name="title" label="Title" :rules="compose(required('Title'), maxLength(255, 'Title'))" />
-            <AppTextField name="description" label="Description (optional)" :rules="maxLength(65535, 'Description')" />
-            <v-select
-              v-model="sectionType"
-              :items="SECTION_TYPE_OPTIONS"
-              label="Type"
-              variant="outlined"
-              density="comfortable"
-              :error-messages="typeError ? [typeError] : []"
-              @update:model-value="typeError = ''"
-            />
-            <v-select
-              v-model="accessType"
-              :items="ACCESS_TYPE_OPTIONS"
-              label="Access type"
-              variant="outlined"
-              density="comfortable"
-            />
-            <v-file-input
-              v-model="file"
-              accept="application/pdf"
-              label="PDF file (max 25 MB)"
-              prepend-icon="mdi-file-pdf-box"
-              :error-messages="fileError ? [fileError] : []"
-            />
-            <div class="d-flex justify-end ga-2">
-              <v-btn variant="text" :disabled="uploading" @click="showUpload = false">Cancel</v-btn>
-              <v-btn type="submit" color="primary" variant="flat" :loading="uploading">Upload</v-btn>
+            <section aria-labelledby="material-upload-details">
+              <h3 id="material-upload-details" class="text-title-small mb-3">Detail materi</h3>
+              <AppTextField name="title" label="Judul" :rules="compose(required('Title'), maxLength(255, 'Title'))" />
+              <AppTextField name="description" label="Deskripsi (opsional)" :rules="maxLength(65535, 'Description')" />
+            </section>
+
+            <section aria-labelledby="material-upload-settings" class="mt-2">
+              <h3 id="material-upload-settings" class="text-title-small mb-3">Pengaturan</h3>
+              <v-select
+                v-model="sectionType"
+                :items="SECTION_TYPE_OPTIONS"
+                label="Jenis"
+                :error-messages="typeError ? [typeError] : []"
+                @update:model-value="typeError = ''"
+              />
+              <v-select
+                v-model="accessType"
+                :items="ACCESS_TYPE_OPTIONS"
+                label="Akses"
+              />
+            </section>
+
+            <section aria-labelledby="material-upload-file" class="mt-2">
+              <h3 id="material-upload-file" class="text-title-small mb-3">File</h3>
+              <v-file-input
+                v-model="file"
+                accept="application/pdf"
+                label="File PDF (maks. 25 MB)"
+                prepend-icon=""
+                prepend-inner-icon="mdi-file-pdf-box"
+                :error-messages="fileError ? [fileError] : []"
+              />
+            </section>
+
+            <div class="d-flex justify-end ga-2 mt-2">
+              <v-btn variant="text" :disabled="uploading" @click="showUpload = false">Batal</v-btn>
+              <v-btn type="submit" color="primary" variant="flat" prepend-icon="mdi-upload" :loading="uploading">
+                Unggah
+              </v-btn>
             </div>
           </form>
         </v-card-text>
@@ -234,9 +260,9 @@ onMounted(() => load(1))
 
     <ConfirmDialog
       v-model="confirmOpen"
-      title="Delete material?"
-      :message="`This permanently deletes the material${target ? ' \u201C' + target.title + '\u201D' : ''} and its file.`"
-      confirm-text="Delete"
+      title="Hapus materi?"
+      :message="`Materi${target ? ' \u201C' + target.title + '\u201D' : ''} beserta filenya akan dihapus permanen.`"
+      confirm-text="Hapus"
       :loading="deleting"
       @confirm="doDelete"
     />

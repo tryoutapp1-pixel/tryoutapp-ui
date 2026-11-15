@@ -90,7 +90,7 @@ async function loadForEdit() {
 function durationRule(v) {
   if (!isTryout.value) return true
   const n = Number(v)
-  if (!v || !Number.isInteger(n) || n <= 0) return 'TRYOUT requires a positive duration (minutes)'
+  if (!v || !Number.isInteger(n) || n <= 0) return 'Try Out wajib punya durasi berupa bilangan bulat lebih dari 0 menit.'
   return true
 }
 
@@ -102,8 +102,8 @@ function durationRule(v) {
 function scoreRule(v) {
   if (v === '' || v === null) return true
   const n = Number(v)
-  if (Number.isNaN(n) || n < 0) return 'Must be a number >= 0'
-  if (!/^\d+(?:\.\d{1,2})?$/.test(String(v))) return 'Up to 2 decimal places'
+  if (Number.isNaN(n) || n < 0) return 'Masukkan angka 0 atau lebih.'
+  if (!/^\d+(?:\.\d{1,2})?$/.test(String(v))) return 'Maksimal 2 angka di belakang titik desimal.'
   return true
 }
 
@@ -112,7 +112,7 @@ const onSubmit = handleSubmit(async (v) => {
   fieldErrors.value = {}
   // Enforce the type/duration rule client-side before sending.
   if (isTryout.value && !numberOrNull(v.duration_minutes)) {
-    formError.value = 'TRYOUT requires a positive duration.'
+    formError.value = 'Try Out wajib punya durasi. Isi durasi dalam menit lalu simpan lagi.'
     return
   }
 
@@ -131,11 +131,11 @@ const onSubmit = handleSubmit(async (v) => {
   try {
     if (isEdit.value) {
       await store.update(editId.value, payload)
-      uiStore.success('Assessment updated.')
+      uiStore.success('Perubahan paket soal disimpan.')
       router.push(`/admin/assessments/${editId.value}`)
     } else {
       const created = await store.create(payload)
-      uiStore.success('Assessment created.')
+      uiStore.success('Paket soal dibuat.')
       router.push(`/admin/assessments/${created.id}`)
     }
   } catch (e) {
@@ -151,71 +151,91 @@ onMounted(loadForEdit)
 
 <template>
   <div>
-    <PageHeader :title="isEdit ? 'Edit assessment' : 'New assessment'">
+    <PageHeader
+      :title="isEdit ? 'Ubah paket soal' : 'Tambah paket soal'"
+      subtitle="Atur detail, jenis, akses, dan nilai ambang batas paket soal."
+    >
       <template #actions>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.back()">Back</v-btn>
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.back()">Kembali</v-btn>
       </template>
     </PageHeader>
 
     <StatePanel :loading="loading" :error="loadError" @retry="loadForEdit">
-      <v-card class="pa-6" max-width="720">
-        <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
+      <v-card class="pa-5 pa-md-6" max-width="880">
+        <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-5">
           {{ formError }}
         </v-alert>
 
         <form novalidate @submit.prevent="onSubmit">
-          <AppTextField
-            name="title"
-            label="Title"
-            :rules="compose(required('Title'), maxLength(255, 'Title'))"
-            :server-error="fieldErrors.title"
-          />
-          <AppTextField name="description" label="Description (optional)" :rules="maxLength(65535, 'Description')" />
-
-          <div class="d-flex flex-wrap ga-4">
-            <v-select
-              v-model="type"
-              :items="['LATIHAN', 'TRYOUT']"
-              label="Type"
-              variant="outlined"
-              density="comfortable"
-              class="flex-grow-1"
-              style="min-width: 180px"
+          <section aria-labelledby="assessment-form-details">
+            <h2 id="assessment-form-details" class="text-title-medium mb-1">Detail paket soal</h2>
+            <p class="text-body-medium text-medium-emphasis mb-4">Judul wajib diisi. Deskripsi boleh dikosongkan.</p>
+            <AppTextField
+              name="title"
+              label="Judul"
+              :rules="compose(required('Title'), maxLength(255, 'Title'))"
+              :server-error="fieldErrors.title"
             />
-            <v-select
-              v-model="accessType"
-              :items="['FREE', 'PREMIUM']"
-              label="Access type"
-              variant="outlined"
-              density="comfortable"
-              class="flex-grow-1"
-              style="min-width: 180px"
+            <AppTextField name="description" label="Deskripsi (opsional)" :rules="maxLength(65535, 'Description')" />
+          </section>
+
+          <v-divider class="my-5" />
+
+          <section aria-labelledby="assessment-form-settings">
+            <h2 id="assessment-form-settings" class="text-title-medium mb-1">Jenis dan akses</h2>
+            <p class="text-body-medium text-medium-emphasis mb-4">
+              Try Out memakai timer dengan durasi tetap. Latihan dikerjakan tanpa timer.
+            </p>
+            <div class="d-flex flex-wrap ga-4">
+              <v-select
+                v-model="type"
+                :items="[{ title: 'Latihan', value: 'LATIHAN' }, { title: 'Try Out', value: 'TRYOUT' }]"
+                label="Jenis"
+                class="flex-grow-1 assessment-form__field"
+              />
+              <v-select
+                v-model="accessType"
+                :items="[{ title: 'Gratis', value: 'FREE' }, { title: 'Premium', value: 'PREMIUM' }]"
+                label="Akses"
+                class="flex-grow-1 assessment-form__field"
+              />
+            </div>
+
+            <AppTextField
+              v-if="isTryout"
+              name="duration_minutes"
+              label="Durasi (menit)"
+              type="number"
+              :rules="durationRule"
+              :server-error="fieldErrors.duration_minutes"
+              class="assessment-form__duration"
             />
-          </div>
+            <p v-else class="d-flex align-center ga-2 bg-surface-light rounded-lg pa-3 text-body-medium mb-4">
+              <v-icon icon="mdi-timer-off-outline" color="primary" size="20" />
+              Latihan tidak memakai timer, jadi durasi tidak perlu diisi.
+            </p>
+          </section>
 
-          <AppTextField
-            v-if="isTryout"
-            name="duration_minutes"
-            label="Duration (minutes)"
-            type="number"
-            :rules="durationRule"
-            :server-error="fieldErrors.duration_minutes"
-          />
-          <p v-else class="text-caption text-medium-emphasis mb-4">
-            LATIHAN has no timer; duration is not applicable.
-          </p>
+          <v-divider class="my-5" />
 
-          <h3 class="text-subtitle-2 font-weight-bold mb-2">Passing scores</h3>
-          <div class="d-flex flex-wrap ga-4">
-            <AppTextField name="passing_score_twk" label="TWK" type="number" :rules="scoreRule" class="flex-grow-1" style="min-width: 140px" />
-            <AppTextField name="passing_score_tiu" label="TIU" type="number" :rules="scoreRule" class="flex-grow-1" style="min-width: 140px" />
-            <AppTextField name="passing_score_tkp" label="TKP" type="number" :rules="scoreRule" class="flex-grow-1" style="min-width: 140px" />
-          </div>
+          <section aria-labelledby="assessment-form-scores">
+            <h2 id="assessment-form-scores" class="text-title-medium mb-1">Nilai ambang batas</h2>
+            <p class="text-body-medium text-medium-emphasis mb-4">
+              Skor minimal tiap kategori. Pakai titik untuk desimal, maksimal 2 angka. Kolom kosong dihitung 0.
+            </p>
+            <div class="d-flex flex-wrap ga-4">
+              <AppTextField name="passing_score_twk" label="TWK" type="number" :rules="scoreRule" class="flex-grow-1 assessment-form__score" />
+              <AppTextField name="passing_score_tiu" label="TIU" type="number" :rules="scoreRule" class="flex-grow-1 assessment-form__score" />
+              <AppTextField name="passing_score_tkp" label="TKP" type="number" :rules="scoreRule" class="flex-grow-1 assessment-form__score" />
+            </div>
+          </section>
 
-          <div class="d-flex justify-end ga-2 mt-4">
-            <v-btn variant="text" :disabled="submitting" @click="router.back()">Cancel</v-btn>
+          <v-divider class="mt-2 mb-5" />
+
+          <div class="d-flex flex-wrap justify-end ga-2">
+            <v-btn variant="text" :disabled="submitting" @click="router.back()">Batal</v-btn>
             <v-btn type="submit" color="primary" variant="flat" :loading="submitting">
-              {{ isEdit ? 'Save changes' : 'Create assessment' }}
+              {{ isEdit ? 'Simpan perubahan' : 'Buat paket soal' }}
             </v-btn>
           </div>
         </form>
@@ -223,3 +243,15 @@ onMounted(loadForEdit)
     </StatePanel>
   </div>
 </template>
+
+<style scoped>
+.assessment-form__field {
+  min-width: 180px;
+}
+.assessment-form__score {
+  min-width: 140px;
+}
+.assessment-form__duration {
+  max-width: 280px;
+}
+</style>

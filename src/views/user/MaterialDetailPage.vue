@@ -70,45 +70,58 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Material">
+    <PageHeader title="Materi">
       <template #actions>
         <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push('/app/materials')">
-          Back
+          Kembali ke Materi
         </v-btn>
       </template>
     </PageHeader>
 
     <!-- Premium-gated content -->
-    <v-card v-if="forbidden" class="pa-8 text-center" variant="outlined">
-      <v-icon icon="mdi-crown-outline" color="amber" size="48" class="mb-3" />
-      <h3 class="text-h6 font-weight-bold mb-2">This material is Premium</h3>
-      <p class="text-body-2 text-medium-emphasis mb-4">
-        Upgrade to Premium to access this material.
+    <v-card
+      v-if="forbidden"
+      variant="flat"
+      color="surface-light"
+      class="pa-8 pa-md-10 text-center rounded-xl"
+    >
+      <v-avatar color="surface" size="64" class="mb-4">
+        <v-icon icon="mdi-crown" color="premium-ink" size="32" />
+      </v-avatar>
+      <h2 class="text-title-large mb-2">Materi ini khusus Premium</h2>
+      <p class="text-body-medium text-medium-emphasis mb-6 mx-auto premium-panel__text">
+        Upgrade ke Premium untuk membaca materi ini dan semua materi Premium lainnya.
       </p>
       <v-btn color="primary" variant="flat" to="/app/subscription" prepend-icon="mdi-crown">
-        Go Premium
+        Lihat paket Premium
       </v-btn>
     </v-card>
 
     <StatePanel v-else :loading="loading" :error="error" @retry="load">
-      <v-card v-if="material" variant="outlined" class="pa-6">
-        <div class="d-flex align-center justify-space-between flex-wrap ga-2 mb-3">
-          <h2 class="text-h6 font-weight-bold mb-0">{{ material.title }}</h2>
-          <div class="d-flex ga-2">
-            <StatusChip :value="material.type" />
-            <StatusChip :value="material.access_type" />
-          </div>
+      <v-card v-if="material" class="pa-5 pa-md-8 rounded-xl">
+        <!-- Title block -->
+        <div class="d-flex flex-wrap ga-2 mb-3">
+          <StatusChip :value="material.type" />
+          <StatusChip :value="material.access_type" />
         </div>
-        <p class="text-body-2 text-medium-emphasis mb-4">
-          {{ material.description || 'No description.' }}
+        <h2 class="text-headline-small mb-3">{{ material.title }}</h2>
+        <p class="app-reading mb-0">
+          {{ material.description || 'Belum ada deskripsi.' }}
         </p>
 
-        <div class="d-flex align-center justify-space-between mb-3 flex-wrap ga-2">
-          <div v-if="material.file" class="text-caption text-medium-emphasis">
-            {{ material.file.original_filename }} · {{ formatBytes(material.file.size) }} ·
-            Added {{ formatDate(material.created_at) }}
+        <v-divider class="my-6" />
+
+        <!-- File info and actions -->
+        <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
+          <div v-if="material.file" class="d-flex flex-wrap align-center gc-4 gr-1 text-body-small text-medium-emphasis file-meta">
+            <span class="d-inline-flex align-center ga-1 file-meta__name">
+              <v-icon icon="mdi-file-document-outline" size="16" />
+              <span class="text-truncate">{{ material.file.original_filename }}</span>
+            </span>
+            <span>{{ formatBytes(material.file.size) }}</span>
+            <span>Ditambahkan {{ formatDate(material.created_at) }}</span>
           </div>
-          <div class="d-flex ga-2">
+          <div class="d-flex flex-wrap ga-2">
             <v-btn
               v-if="material.file"
               variant="text"
@@ -116,7 +129,7 @@ onMounted(load)
               :loading="refreshing"
               @click="reloadFile"
             >
-              Reload
+              Muat ulang
             </v-btn>
             <v-btn
               v-if="material.file && material.file.url"
@@ -125,36 +138,53 @@ onMounted(load)
               prepend-icon="mdi-download"
               @click="download"
             >
-              Download
+              Unduh
             </v-btn>
           </div>
         </div>
 
         <template v-if="material.file">
           <div v-if="isPdf(material) && material.file.url" class="pdf-frame">
-            <iframe :src="material.file.url" title="Material PDF" width="100%" height="100%" />
+            <iframe :src="material.file.url" title="PDF materi" width="100%" height="100%" />
           </div>
           <v-alert v-else-if="isPdf(material)" type="warning" variant="tonal" density="comfortable">
-            Preview link is unavailable. Click "Reload" to generate a fresh link.
+            Tautan pratinjau tidak tersedia. Tekan "Muat ulang" untuk membuat tautan baru.
           </v-alert>
           <v-alert v-else type="info" variant="tonal" density="comfortable">
-            Inline preview is only available for PDF files. Use "Download" to open this file.
+            Pratinjau hanya tersedia untuk file PDF. Tekan "Unduh" untuk membuka file ini.
           </v-alert>
         </template>
-        <p v-else class="text-body-2 text-medium-emphasis mb-0">No file attached.</p>
+        <p v-else class="text-body-medium text-medium-emphasis mb-0">
+          Materi ini belum punya file. Coba buka lagi nanti.
+        </p>
       </v-card>
     </StatePanel>
   </div>
 </template>
 
 <style scoped>
+.premium-panel__text {
+  max-width: 48ch;
+}
+
+/* Long file names truncate instead of widening the card on mobile. */
+.file-meta {
+  min-width: 0;
+  max-width: 100%;
+}
+.file-meta__name {
+  max-width: 100%;
+  min-width: 0;
+}
+
 .pdf-frame {
   width: 100%;
   height: 80vh;
   min-height: 480px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
+  border: 1px solid rgb(var(--app-line));
+  border-radius: 12px;
   overflow: hidden;
+  background: rgb(var(--v-theme-surface-light));
 }
 .pdf-frame iframe {
   border: 0;

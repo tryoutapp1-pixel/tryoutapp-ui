@@ -56,7 +56,7 @@ async function recheck() {
     } else if (status === 'FAILED' || status === 'CANCELLED' || status === 'EXPIRED') {
       router.replace({ name: 'user-payment-failed' })
     } else {
-      uiStore.notify('Still processing. Please check again in a moment.', 'info')
+      uiStore.notify('Pembayaran masih diproses. Coba cek lagi beberapa saat lagi.', 'info')
     }
   } catch (e) {
     uiStore.error(e.message)
@@ -67,7 +67,7 @@ async function recheck() {
 
 const message = computed(
   () =>
-    'Your payment is still being processed by the provider. Premium will activate automatically once the payment is confirmed. You can re-check the status below.'
+    'Penyedia pembayaran masih memproses pembayaranmu. Premium aktif otomatis setelah pembayaran dikonfirmasi, dan kamu bisa cek statusnya lagi di bawah.'
 )
 
 onMounted(load)
@@ -75,14 +75,14 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Payment pending" />
+    <PageHeader title="Status pembayaran" />
 
     <StatePanel :loading="loading" :error="error" @retry="load">
       <v-row justify="center">
-        <v-col cols="12" md="7">
+        <v-col cols="12" md="8" lg="7">
           <PaymentStatus
             state="pending"
-            title="Payment is processing"
+            title="Pembayaran sedang diproses"
             :message="message"
             :invoice="activeInvoice"
             :transaction="activeTransaction"
@@ -95,13 +95,13 @@ onMounted(load)
                 :loading="checking"
                 @click="recheck"
               >
-                Check status
+                Cek status
               </v-btn>
-              <v-btn variant="tonal" :to="{ name: 'user-transactions' }" prepend-icon="mdi-receipt-text-outline">
-                Transactions
+              <v-btn variant="tonal" color="primary" :to="{ name: 'user-transactions' }" prepend-icon="mdi-receipt-text-outline">
+                Lihat transaksi
               </v-btn>
-              <v-btn variant="text" :to="{ name: 'user-dashboard' }" prepend-icon="mdi-view-dashboard-outline">
-                Dashboard
+              <v-btn variant="text" :to="{ name: 'user-dashboard' }" prepend-icon="mdi-home-variant-outline">
+                Ke Beranda
               </v-btn>
             </template>
           </PaymentStatus>

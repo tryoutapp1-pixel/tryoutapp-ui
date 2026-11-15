@@ -71,7 +71,7 @@ async function doToggle() {
     const suspend = !isSuspended.value
     const updated = await store.setSuspended(user.value.id, suspend)
     user.value = updated
-    uiStore.success(suspend ? 'User suspended.' : 'User reactivated.')
+    uiStore.success(suspend ? 'Akun pengguna ditangguhkan.' : 'Akun pengguna diaktifkan kembali.')
     confirmOpen.value = false
   } catch (e) {
     uiStore.error(e.message)
@@ -85,10 +85,10 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="User detail">
+    <PageHeader title="Detail pengguna" subtitle="Data akun dan status langganan.">
       <template #actions>
         <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push('/admin/users')">
-          Back
+          Kembali
         </v-btn>
         <v-btn
           v-if="canToggle"
@@ -97,42 +97,88 @@ onMounted(load)
           :prepend-icon="isSuspended ? 'mdi-account-check-outline' : 'mdi-account-cancel-outline'"
           @click="askToggle"
         >
-          {{ isSuspended ? 'Reactivate' : 'Suspend' }}
+          {{ isSuspended ? 'Aktifkan kembali' : 'Tangguhkan' }}
         </v-btn>
       </template>
     </PageHeader>
 
     <StatePanel :loading="loading" :error="error" @retry="load">
-      <v-card v-if="user" class="pa-6" max-width="640">
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">ID</v-col><v-col cols="8">{{ user.id }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Role</v-col><v-col cols="8"><StatusChip :value="user.role" /></v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Name</v-col><v-col cols="8" class="font-weight-medium">{{ user.name }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Email</v-col><v-col cols="8">{{ user.email }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Status</v-col><v-col cols="8"><StatusChip :value="user.status" /></v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Email verified</v-col><v-col cols="8">{{ formatDate(user.email_verified_at) }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Created</v-col><v-col cols="8">{{ formatDate(user.created_at) }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Subscription</v-col><v-col cols="8"><StatusChip :value="user.subscription_status" /></v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Start Date</v-col><v-col cols="8">{{ formatDate(user.subscription_started_at) }}</v-col></v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-2"><v-col cols="4" class="text-medium-emphasis">Expired Date</v-col><v-col cols="8">{{ formatDate(user.subscription_expired_at) }}</v-col></v-row>
+      <v-card v-if="user" class="pa-5 pa-md-6" max-width="720">
+        <section aria-labelledby="user-detail-account">
+          <div class="d-flex align-center ga-3 mb-2">
+            <v-avatar color="surface-light" rounded="lg" size="40">
+              <v-icon icon="mdi-account-outline" color="primary" size="22" />
+            </v-avatar>
+            <h2 id="user-detail-account" class="text-title-medium">Akun</h2>
+          </div>
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">ID</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium">{{ user.id }}</v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Peran</v-col>
+            <v-col cols="7" sm="8"><StatusChip :value="user.role" /></v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Nama</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium font-weight-medium text-break">{{ user.name }}</v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Email</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium text-break">{{ user.email }}</v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Status</v-col>
+            <v-col cols="7" sm="8"><StatusChip :value="user.status" /></v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Email terverifikasi</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium">{{ formatDate(user.email_verified_at) }}</v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Terdaftar</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium">{{ formatDate(user.created_at) }}</v-col>
+          </v-row>
+        </section>
+
+        <section aria-labelledby="user-detail-subscription" class="mt-6">
+          <div class="d-flex align-center ga-3 mb-2">
+            <v-avatar color="surface-light" rounded="lg" size="40">
+              <v-icon icon="mdi-crown-outline" color="premium-ink" size="22" />
+            </v-avatar>
+            <h2 id="user-detail-subscription" class="text-title-medium">Langganan</h2>
+          </div>
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Status langganan</v-col>
+            <v-col cols="7" sm="8"><StatusChip :value="user.subscription_status" /></v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Tanggal mulai</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium">{{ formatDate(user.subscription_started_at) }}</v-col>
+          </v-row>
+          <v-divider />
+          <v-row no-gutters align="center" class="py-3">
+            <v-col cols="5" sm="4" class="text-body-medium text-medium-emphasis">Tanggal berakhir</v-col>
+            <v-col cols="7" sm="8" class="text-body-medium">{{ formatDate(user.subscription_expired_at) }}</v-col>
+          </v-row>
+        </section>
       </v-card>
     </StatePanel>
 
     <ConfirmDialog
       v-model="confirmOpen"
-      :title="isSuspended ? 'Reactivate user?' : 'Suspend user?'"
+      :title="isSuspended ? 'Aktifkan kembali pengguna ini?' : 'Tangguhkan pengguna ini?'"
       :message="isSuspended
-        ? 'This restores the account to ACTIVE and allows the user to sign in and use the app again.'
-        : 'This sets the account to SUSPENDED. The user is blocked from all user endpoints immediately and cannot sign in until reactivated.'"
-      :confirm-text="isSuspended ? 'Reactivate' : 'Suspend'"
+        ? 'Status akun kembali menjadi Aktif. Pengguna bisa masuk dan memakai aplikasi lagi.'
+        : 'Status akun menjadi Ditangguhkan. Pengguna langsung diblokir dari semua fitur pengguna dan tidak bisa masuk sampai akunnya diaktifkan kembali.'"
+      :confirm-text="isSuspended ? 'Aktifkan kembali' : 'Tangguhkan'"
       :confirm-color="isSuspended ? 'success' : 'error'"
       :loading="working"
       @confirm="doToggle"

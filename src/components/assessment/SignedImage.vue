@@ -43,7 +43,7 @@ watch(
       :alt="alt"
       :max-height="maxHeight"
       contain
-      class="rounded"
+      class="rounded-lg"
       @error="failed = true"
     />
     <v-alert
@@ -51,12 +51,14 @@ watch(
       type="warning"
       variant="tonal"
       density="comfortable"
-      class="d-flex align-center"
+      icon="mdi-image-off-outline"
     >
-      <span class="me-2">Image could not be loaded (the link may have expired).</span>
-      <v-btn size="small" variant="text" prepend-icon="mdi-refresh" @click="emit('refresh')">
-        Reload
-      </v-btn>
+      <div class="d-flex flex-wrap align-center ga-2">
+        <span class="text-body-medium">Gambar belum bisa dimuat. Tautannya mungkin sudah kedaluwarsa.</span>
+        <v-btn size="small" variant="text" prepend-icon="mdi-refresh" @click="emit('refresh')">
+          Muat ulang
+        </v-btn>
+      </div>
     </v-alert>
   </div>
 </template>

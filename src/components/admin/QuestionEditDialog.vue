@@ -134,26 +134,26 @@ async function save() {
   formError.value = ''
   const payload = changedPayload.value
   if (!Object.keys(payload).length) {
-    formError.value = 'No changes to save.'
+    formError.value = 'Belum ada perubahan untuk disimpan.'
     return
   }
   if (payload.image_attachment_id !== undefined && Number.isNaN(payload.image_attachment_id)) {
-    formError.value = 'Question image ID must be a positive integer or empty.'
+    formError.value = 'ID gambar soal harus bilangan bulat positif, atau kosongkan kolomnya.'
     return
   }
   if (payload.explanation_attachment_id !== undefined && Number.isNaN(payload.explanation_attachment_id)) {
-    formError.value = 'Explanation file ID must be a positive integer or empty.'
+    formError.value = 'ID file pembahasan harus bilangan bulat positif, atau kosongkan kolomnya.'
     return
   }
   if (payload.question_text !== undefined && !payload.question_text) {
-    formError.value = 'Question text cannot be empty.'
+    formError.value = 'Teks soal tidak boleh kosong.'
     return
   }
 
   saving.value = true
   try {
     const updated = await adminService.updateQuestion(props.question.id, payload)
-    uiStore.success('Question updated.')
+    uiStore.success('Perubahan soal disimpan.')
     emit('saved', updated)
     close()
   } catch (e) {
@@ -165,52 +165,61 @@ async function save() {
 </script>
 
 <template>
-  <v-dialog :model-value="modelValue" max-width="640" @update:model-value="emit('update:modelValue', $event)">
-    <v-card class="pa-2">
-      <v-card-title class="text-h6">Edit question</v-card-title>
+  <v-dialog :model-value="modelValue" max-width="640" scrollable @update:model-value="emit('update:modelValue', $event)">
+    <v-card class="pa-3">
+      <v-card-title class="text-title-large text-wrap">Ubah soal</v-card-title>
       <v-card-text>
         <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
           {{ formError }}
         </v-alert>
 
-        <v-textarea v-model="form.question_text" label="Question text" variant="outlined" rows="3" auto-grow />
-        <v-select
-          v-model="form.question_type"
-          :items="QUESTION_TYPES"
-          label="Question type"
-          variant="outlined"
-          density="comfortable"
-        />
-        <v-textarea v-model="form.explanation" label="Explanation (optional)" variant="outlined" rows="3" auto-grow />
-        <div class="d-flex flex-wrap ga-4">
-          <v-text-field
-            v-model="form.image_attachment_id"
-            label="Question image ID (optional)"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            hint="Attachment ID from the Images menu. Leave empty for none."
-            persistent-hint
-            class="flex-grow-1"
-            style="min-width: 220px"
+        <section aria-labelledby="question-edit-stem">
+          <h3 id="question-edit-stem" class="text-title-small mb-3">Soal</h3>
+          <v-textarea v-model="form.question_text" label="Teks soal" rows="3" auto-grow />
+          <v-select
+            v-model="form.question_type"
+            :items="QUESTION_TYPES"
+            label="Jenis soal"
           />
-          <v-text-field
-            v-model="form.explanation_attachment_id"
-            label="Explanation file ID (optional)"
-            type="number"
-            variant="outlined"
-            density="comfortable"
-            hint="Attachment ID for the explanation file. Leave empty for none."
-            persistent-hint
-            class="flex-grow-1"
-            style="min-width: 220px"
-          />
-        </div>
+        </section>
+
+        <section aria-labelledby="question-edit-explanation" class="mt-2">
+          <h3 id="question-edit-explanation" class="text-title-small mb-3">Pembahasan</h3>
+          <v-textarea v-model="form.explanation" label="Pembahasan (opsional)" rows="3" auto-grow />
+        </section>
+
+        <section aria-labelledby="question-edit-attachments" class="mt-2">
+          <h3 id="question-edit-attachments" class="text-title-small mb-3">Lampiran</h3>
+          <div class="d-flex flex-wrap ga-4">
+            <v-text-field
+              v-model="form.image_attachment_id"
+              label="ID gambar soal (opsional)"
+              type="number"
+              hint="ID lampiran dari menu Gambar. Kosongkan bila tidak ada."
+              persistent-hint
+              class="flex-grow-1 question-edit__field"
+            />
+            <v-text-field
+              v-model="form.explanation_attachment_id"
+              label="ID file pembahasan (opsional)"
+              type="number"
+              hint="ID lampiran untuk file pembahasan. Kosongkan bila tidak ada."
+              persistent-hint
+              class="flex-grow-1 question-edit__field"
+            />
+          </div>
+        </section>
       </v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn variant="text" :disabled="saving" @click="close">Cancel</v-btn>
-        <v-btn color="primary" variant="flat" :loading="saving" @click="save">Save changes</v-btn>
+      <v-card-actions class="justify-end ga-2">
+        <v-btn variant="text" :disabled="saving" @click="close">Batal</v-btn>
+        <v-btn color="primary" variant="flat" :loading="saving" @click="save">Simpan perubahan</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
+
+<style scoped>
+.question-edit__field {
+  min-width: 220px;
+}
+</style>

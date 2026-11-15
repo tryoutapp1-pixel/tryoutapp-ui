@@ -33,48 +33,52 @@ onMounted(() => load(1))
 
 <template>
   <div>
-    <PageHeader title="Materials" subtitle="Learning materials for TWK, TIU, and TKP." />
+    <PageHeader title="Materi" subtitle="Materi TWK, TIU, dan TKP per topik. Baca dulu sebelum mengerjakan Latihan." />
 
     <StatePanel
       :loading="loading"
       :error="error"
       :empty="!loading && !error && items.length === 0"
-      empty-text="No materials are available yet."
+      empty-text="Belum ada materi yang bisa dibaca. Sambil menunggu, coba kerjakan Latihan dulu."
       empty-icon="mdi-book-open-page-variant-outline"
       @retry="load(pagination.page)"
     >
       <v-row>
         <v-col v-for="m in items" :key="m.id" cols="12" sm="6" md="4">
           <v-card
-            variant="outlined"
             class="pa-5 h-100 d-flex flex-column"
             :class="{ 'card-locked': isLocked(m) }"
-            :aria-label="isLocked(m) ? `${m.title}, Premium only` : m.title"
+            :aria-label="isLocked(m) ? `${m.title}, khusus Premium` : m.title"
             link
             hover
             @click="open(m)"
             @keydown.enter="open(m)"
           >
-            <div class="d-flex align-center justify-space-between mb-2">
-              <StatusChip :value="m.type" />
-              <StatusChip :value="m.access_type" />
+            <div class="d-flex align-start justify-space-between ga-3 mb-4">
+              <v-avatar color="surface-light" rounded="lg" size="44">
+                <v-icon icon="mdi-book-open-page-variant-outline" color="primary" />
+              </v-avatar>
+              <div class="d-flex flex-wrap justify-end ga-2">
+                <StatusChip :value="m.type" />
+                <StatusChip :value="m.access_type" />
+              </div>
             </div>
-            <h3 class="text-subtitle-1 font-weight-bold mb-1">{{ m.title }}</h3>
-            <p class="text-body-2 text-medium-emphasis mb-3 flex-grow-1">
-              {{ m.description || 'No description.' }}
+            <h2 class="text-title-medium mb-1">{{ m.title }}</h2>
+            <p class="text-body-medium text-medium-emphasis mb-4 flex-grow-1">
+              {{ m.description || 'Belum ada deskripsi.' }}
             </p>
-            <div class="d-flex align-center text-caption text-medium-emphasis">
-              <span>Added {{ formatDateOnly(m.created_at) }}</span>
-              <span v-if="isLocked(m)" class="d-flex align-center ga-1 ms-auto text-amber-darken-3">
+            <div class="d-flex flex-wrap align-center ga-2 pt-3 border-t text-body-small text-medium-emphasis">
+              <span>Ditambahkan {{ formatDateOnly(m.created_at) }}</span>
+              <span v-if="isLocked(m)" class="d-flex align-center ga-1 ms-auto text-premium-ink font-weight-bold">
                 <v-icon icon="mdi-lock-outline" size="16" />
-                Premium
+                Terkunci
               </span>
             </div>
           </v-card>
         </v-col>
       </v-row>
 
-      <div v-if="pagination.totalPages > 1" class="d-flex justify-center mt-4">
+      <div v-if="pagination.totalPages > 1" class="d-flex justify-center mt-6">
         <v-pagination
           :model-value="pagination.page"
           :length="pagination.totalPages"
@@ -86,14 +90,16 @@ onMounted(() => load(1))
 
     <PremiumRequiredDialog
       v-model="dialogOpen"
-      title="This material is for Premium members"
-      message="Upgrade to Premium to open every TWK, TIU, and TKP material."
+      title="Materi ini khusus Premium"
+      message="Upgrade ke Premium untuk membuka semua materi TWK, TIU, dan TKP."
     />
   </div>
 </template>
 
 <style scoped>
+/* Locked (Premium) modules sit on a faint blue fill so they read as
+   unavailable without lowering text contrast. */
 .card-locked {
-  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  background-color: rgba(var(--v-theme-surface-light), 0.55);
 }
 </style>

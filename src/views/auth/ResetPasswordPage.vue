@@ -37,7 +37,7 @@ const onSubmit = handleSubmit(async (formValues) => {
   submitting.value = true
   try {
     await authService.resetPassword({ token: token.value, newPassword: formValues.newPassword })
-    uiStore.success('Password reset successful. Please log in.')
+    uiStore.success('Kata sandi berhasil diganti. Silakan masuk dengan kata sandi baru.')
     router.replace('/login')
   } catch (error) {
     // Backend returns 400 for invalid / used / expired tokens.
@@ -49,42 +49,48 @@ const onSubmit = handleSubmit(async (formValues) => {
 </script>
 
 <template>
-  <v-container class="py-12" style="max-width: 460px">
-    <v-card class="pa-6">
-      <h1 class="text-h5 font-weight-bold mb-1">Reset password</h1>
-      <p class="text-body-2 text-medium-emphasis mb-6">Choose a new password for your account.</p>
+  <div class="app-content px-4 pt-6 pt-md-16 pb-12 pb-md-16">
+    <v-card class="auth-card rounded-xl pa-6 pa-sm-10 mx-auto">
+      <h1 class="text-headline-medium mb-2">Buat kata sandi baru</h1>
+      <p class="text-body-large text-medium-emphasis mb-8">Pilih kata sandi baru untuk akunmu.</p>
 
-      <v-alert v-if="missingToken" type="warning" variant="tonal" density="comfortable" class="mb-4">
-        This reset link is missing its token. Request a new link from the
-        <RouterLink to="/forgot-password" class="text-primary">forgot password</RouterLink> page.
+      <v-alert v-if="missingToken" type="warning" variant="tonal" density="comfortable" class="mb-6">
+        Tautan ini tidak lengkap. Minta tautan baru di halaman
+        <RouterLink to="/forgot-password" class="app-link">lupa kata sandi</RouterLink>.
       </v-alert>
 
-      <v-alert v-else-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
+      <v-alert v-else-if="formError" type="error" variant="tonal" density="comfortable" class="mb-6">
         {{ formError }}
       </v-alert>
 
       <form v-if="!missingToken" novalidate @submit.prevent="onSubmit">
         <AppPasswordField
           name="newPassword"
-          label="New password"
+          label="Kata sandi baru"
           autocomplete="new-password"
           :rules="compose(required('New password'), passwordRule)"
         />
         <AppPasswordField
           name="confirmPassword"
-          label="Confirm new password"
+          label="Ulangi kata sandi baru"
           autocomplete="new-password"
           :rules="compose(required('Confirm password'), matches(() => values.newPassword, 'Passwords do not match'))"
         />
         <v-btn type="submit" color="primary" size="large" block :loading="submitting" class="mt-2">
-          Reset password
+          Simpan kata sandi baru
         </v-btn>
       </form>
 
-      <v-divider class="my-5" />
-      <p class="text-body-2 text-center mb-0">
-        <RouterLink to="/login" class="text-primary text-decoration-none">Back to login</RouterLink>
+      <p class="text-body-medium text-center mt-8 mb-0">
+        <RouterLink to="/login" class="app-link">Kembali ke halaman masuk</RouterLink>
       </p>
     </v-card>
-  </v-container>
+  </div>
 </template>
+
+<style scoped>
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+}
+</style>

@@ -74,10 +74,10 @@ onMounted(() => {
 
 <template>
   <div>
-    <PageHeader :title="`${isTryout ? 'Try Out' : 'Latihan'} attempt history`" :subtitle="title">
+    <PageHeader :title="`Riwayat pengerjaan ${isTryout ? 'Try Out' : 'Latihan'}`" :subtitle="title">
       <template #actions>
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: `user-${kind}-detail`, params: { id: assessmentId } }">
-          Back
+          Kembali ke paket soal
         </v-btn>
       </template>
     </PageHeader>

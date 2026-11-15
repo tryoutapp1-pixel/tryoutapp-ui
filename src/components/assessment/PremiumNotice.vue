@@ -12,21 +12,29 @@
 
 /** @type {PremiumNoticeProps} */
 const props = defineProps({
-  title: { type: String, default: 'Premium feature' },
+  title: { type: String, default: 'Fitur ini khusus Premium' },
   message: {
     type: String,
-    default: 'Upgrade to Premium to unlock this content.'
+    default: 'Upgrade ke Premium untuk membuka konten ini.'
   }
 })
 </script>
 
 <template>
-  <v-card variant="tonal" color="amber" class="pa-6 text-center">
-    <v-icon icon="mdi-crown-outline" color="amber-darken-2" size="44" class="mb-3" />
-    <h3 class="text-h6 font-weight-bold mb-2">{{ title }}</h3>
-    <p class="text-body-2 mb-4">{{ message }}</p>
+  <v-card variant="flat" color="surface-light" class="pa-6 pa-md-8 text-center rounded-xl">
+    <v-avatar color="surface" size="56" class="mb-4">
+      <v-icon icon="mdi-crown" color="premium-ink" size="28" />
+    </v-avatar>
+    <h3 class="text-title-large mb-2">{{ title }}</h3>
+    <p class="text-body-medium text-medium-emphasis mb-5 mx-auto premium-notice__text">{{ message }}</p>
     <v-btn color="primary" variant="flat" to="/app/subscription" prepend-icon="mdi-crown">
-      Go Premium
+      Lihat paket Premium
     </v-btn>
   </v-card>
 </template>
+
+<style scoped>
+.premium-notice__text {
+  max-width: 48ch;
+}
+</style>

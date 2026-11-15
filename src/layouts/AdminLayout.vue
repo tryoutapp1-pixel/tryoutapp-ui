@@ -1,10 +1,12 @@
 <script setup>
-// Admin layout: navigation drawer, app bar, and content outlet.
-import { ref } from 'vue'
+// Admin layout: navigation drawer, app bar, and content outlet. Same shell as
+// the learner layout so both sides share one visual language.
+import { computed, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
+import AppBrand from '../components/AppBrand.vue'
 
 /**
  * @typedef {Object} NavItem
@@ -18,17 +20,25 @@ const authStore = useAuthStore()
 const profileStore = useProfileStore()
 const { user } = storeToRefs(authStore)
 
-const drawer = ref(true)
+// null lets Vuetify open the drawer on desktop and keep it closed on mobile.
+const drawer = ref(null)
+
+/** Initials for the account avatar. */
+const initials = computed(() => {
+  const name = user.value?.name?.trim() || ''
+  const parts = name.split(/\s+/).filter(Boolean)
+  return (parts[0]?.[0] || '?').toUpperCase() + (parts[1]?.[0] || '').toUpperCase()
+})
 
 /** @type {NavItem[]} */
 const navItems = [
-  { title: 'Dashboard', to: '/admin', icon: 'mdi-view-dashboard-outline' },
-  { title: 'Users', to: '/admin/users', icon: 'mdi-account-group-outline' },
-  { title: 'Images', to: '/admin/images', icon: 'mdi-image-multiple-outline' },
-  { title: 'Materials', to: '/admin/materials', icon: 'mdi-book-open-page-variant-outline' },
-  { title: 'Assessments', to: '/admin/assessments', icon: 'mdi-clipboard-text-outline' },
-  { title: 'Feedback', to: '/admin/feedback', icon: 'mdi-message-star-outline' },
-  { title: 'Profile', to: '/admin/profile', icon: 'mdi-account-circle-outline' }
+  { title: 'Dasbor', to: '/admin', icon: 'mdi-view-dashboard-outline' },
+  { title: 'Pengguna', to: '/admin/users', icon: 'mdi-account-group-outline' },
+  { title: 'Gambar', to: '/admin/images', icon: 'mdi-image-multiple-outline' },
+  { title: 'Materi', to: '/admin/materials', icon: 'mdi-book-open-page-variant-outline' },
+  { title: 'Paket soal', to: '/admin/assessments', icon: 'mdi-clipboard-text-outline' },
+  { title: 'Masukan', to: '/admin/feedback', icon: 'mdi-message-star-outline' },
+  { title: 'Profil', to: '/admin/profile', icon: 'mdi-account-circle-outline' }
 ]
 
 async function onLogout() {
@@ -40,13 +50,15 @@ async function onLogout() {
 
 <template>
   <v-app>
-    <v-navigation-drawer v-model="drawer" color="surface" border>
-      <div class="pa-4 d-flex align-center text-primary">
-        <v-icon icon="mdi-shield-account-outline" class="me-2" />
-        <span class="text-h6 font-weight-bold">Admin</span>
+    <v-navigation-drawer v-model="drawer" color="surface" width="268">
+      <div class="px-5 pt-5 pb-4">
+        <RouterLink to="/admin" class="text-decoration-none" aria-label="Dasbor admin">
+          <AppBrand tag="Admin" />
+        </RouterLink>
       </div>
-      <v-divider />
-      <v-list nav density="comfortable">
+
+      <v-list nav density="comfortable" class="px-3">
+        <v-list-subheader>Kelola</v-list-subheader>
         <v-list-item
           v-for="item in navItems"
           :key="item.to"
@@ -58,29 +70,47 @@ async function onLogout() {
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar flat border>
-      <v-app-bar-nav-icon aria-label="Toggle navigation" @click="drawer = !drawer" />
-      <v-toolbar-title class="text-body-1 font-weight-medium">Administration</v-toolbar-title>
-      <v-spacer />
-      <v-menu>
-        <template #activator="{ props }">
-          <v-btn v-bind="props" variant="text" prepend-icon="mdi-account-circle-outline">
-            {{ user ? user.name : 'Account' }}
-          </v-btn>
-        </template>
-        <v-list>
-          <v-list-item to="/admin/profile" prepend-icon="mdi-account-outline" title="Profile" />
-          <v-list-item to="/admin/account" prepend-icon="mdi-lock-outline" title="Change password" />
-          <v-divider />
-          <v-list-item prepend-icon="mdi-logout" title="Logout" @click="onLogout" />
-        </v-list>
-      </v-menu>
+    <v-app-bar color="background" height="72">
+      <div class="app-content app-content--wide d-flex align-center ga-2 px-2 px-md-6">
+        <v-app-bar-nav-icon aria-label="Buka atau tutup menu" @click="drawer = !drawer" />
+        <v-spacer />
+        <v-menu location="bottom end">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" variant="text" class="px-2" height="48">
+              <v-avatar color="navy" size="34" class="me-2">
+                <span class="text-label-large">{{ initials }}</span>
+              </v-avatar>
+              <span class="d-none d-sm-inline text-truncate app-account-btn__name">
+                {{ user ? user.name : 'Akun' }}
+              </span>
+              <v-icon icon="mdi-chevron-down" size="18" class="ms-1" />
+            </v-btn>
+          </template>
+          <v-list min-width="220">
+            <v-list-item to="/admin/profile" prepend-icon="mdi-account-outline" title="Profil" />
+            <v-list-item to="/admin/account" prepend-icon="mdi-lock-outline" title="Ubah kata sandi" />
+            <v-divider class="my-1" />
+            <v-list-item prepend-icon="mdi-logout" title="Keluar" base-color="error" @click="onLogout" />
+          </v-list>
+        </v-menu>
+      </div>
     </v-app-bar>
 
     <v-main>
-      <v-container>
+      <div class="app-content app-content--wide px-4 px-md-8 pt-2 pb-12">
         <RouterView />
-      </v-container>
+      </div>
     </v-main>
   </v-app>
 </template>
+
+<style scoped>
+.app-account-btn__name {
+  max-width: 180px;
+}
+
+/* Admin tables need more room than learner pages. */
+.app-content--wide {
+  max-width: 1280px;
+}
+</style>

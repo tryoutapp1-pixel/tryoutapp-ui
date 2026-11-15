@@ -14,10 +14,10 @@ import { useRouter } from 'vue-router'
 /** @type {PremiumRequiredDialogProps} */
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  title: { type: String, default: 'This content is for Premium members' },
+  title: { type: String, default: 'Konten ini khusus Premium' },
   message: {
     type: String,
-    default: 'Upgrade to Premium to open every material, Latihan, and Try Out, and to read the full explanation for each question.'
+    default: 'Upgrade ke Premium untuk membuka semua Materi, Latihan, dan Try Out, serta membaca pembahasan lengkap tiap soal.'
   }
 })
 
@@ -40,20 +40,20 @@ function goToSubscription() {
 
 <template>
   <v-dialog :model-value="props.modelValue" max-width="460" @update:model-value="emit('update:modelValue', $event)">
-    <v-card class="pa-2">
+    <v-card class="pa-3">
       <v-card-item>
         <template #prepend>
-          <v-avatar color="amber-lighten-4" size="44">
-            <v-icon icon="mdi-crown-outline" color="amber-darken-3" />
+          <v-avatar color="premium" size="48">
+            <v-icon icon="mdi-crown" color="navy" />
           </v-avatar>
         </template>
-        <v-card-title class="text-h6 text-wrap">{{ props.title }}</v-card-title>
+        <v-card-title class="text-title-large text-wrap">{{ props.title }}</v-card-title>
       </v-card-item>
-      <v-card-text class="text-body-2">{{ props.message }}</v-card-text>
-      <v-card-actions class="justify-end">
-        <v-btn variant="text" @click="close">Not now</v-btn>
+      <v-card-text class="text-body-medium text-medium-emphasis">{{ props.message }}</v-card-text>
+      <v-card-actions class="justify-end ga-2">
+        <v-btn variant="text" @click="close">Nanti saja</v-btn>
         <v-btn color="primary" variant="flat" prepend-icon="mdi-crown" @click="goToSubscription">
-          See Premium plans
+          Lihat paket Premium
         </v-btn>
       </v-card-actions>
     </v-card>

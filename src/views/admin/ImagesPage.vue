@@ -36,13 +36,13 @@ async function onUpload() {
   const file = Array.isArray(selectedFile.value) ? selectedFile.value[0] : selectedFile.value
   if (!file) return
   if (file.size > MAX_BYTES) {
-    uiStore.error('Image exceeds the 5 MB limit.')
+    uiStore.error('Ukuran gambar melebihi batas 5 MB. Pilih gambar yang lebih kecil.')
     return
   }
   try {
     const created = await store.upload(file)
     selectedFile.value = null
-    uiStore.success(`Uploaded. Attachment ID: ${created.id}`)
+    uiStore.success(`Gambar diunggah. ID lampiran: ${created.id}`)
   } catch (e) {
     uiStore.error(e.message)
   }
@@ -55,9 +55,9 @@ async function onUpload() {
 async function copyId(id) {
   try {
     await navigator.clipboard.writeText(String(id))
-    uiStore.success(`Copied ID ${id}`)
+    uiStore.success(`ID ${id} disalin.`)
   } catch {
-    uiStore.notify(`Attachment ID: ${id}`, 'info')
+    uiStore.notify(`ID lampiran: ${id}`, 'info')
   }
 }
 
@@ -65,7 +65,7 @@ async function copyId(id) {
 async function onRefreshUrl(item) {
   try {
     item.url = await store.refreshUrl(item.id)
-    uiStore.success('Refreshed image URL.')
+    uiStore.success('URL gambar diperbarui.')
   } catch (e) {
     uiStore.error(e.message)
   }
@@ -87,7 +87,7 @@ async function doDelete() {
   deleting.value = true
   try {
     await store.remove(target.value.id)
-    uiStore.success('Image deleted.')
+    uiStore.success('Gambar dihapus.')
     confirmOpen.value = false
   } catch (e) {
     uiStore.error(e.message)
@@ -101,62 +101,95 @@ onMounted(() => load(1))
 
 <template>
   <div>
-    <PageHeader title="Images" subtitle="Upload images and reference their ID when building question packages." />
+    <PageHeader title="Gambar" subtitle="Unggah gambar, lalu pakai ID-nya saat menyusun paket soal." />
 
-    <v-card class="pa-4 mb-6">
+    <v-card variant="flat" class="pa-4 pa-md-5 mb-6">
       <div class="d-flex flex-wrap align-center ga-3">
         <v-file-input
           v-model="selectedFile"
           :accept="ACCEPT"
-          label="Choose image (JPEG/PNG/WEBP/GIF, max 5 MB)"
+          label="Pilih gambar"
           density="comfortable"
-          prepend-icon="mdi-image-outline"
+          prepend-icon=""
+          prepend-inner-icon="mdi-image-outline"
           hide-details
-          class="flex-grow-1"
-          style="min-width: 260px"
+          class="flex-grow-1 images-upload__input"
         />
-        <v-btn color="primary" :loading="uploading" :disabled="!selectedFile" @click="onUpload">
-          Upload
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-upload"
+          :loading="uploading"
+          :disabled="!selectedFile"
+          @click="onUpload"
+        >
+          Unggah
         </v-btn>
       </div>
+      <p class="text-body-small text-medium-emphasis mt-2 mb-0">JPEG, PNG, WEBP, atau GIF. Maksimal 5 MB.</p>
     </v-card>
 
     <StatePanel
       :loading="loading"
       :error="error"
       :empty="!loading && !error && items.length === 0"
-      empty-text="No images uploaded yet."
+      empty-text="Belum ada gambar. Unggah gambar pertama lewat kolom di atas."
       empty-icon="mdi-image-off-outline"
       @retry="load(pagination.page)"
     >
       <v-row>
         <v-col v-for="img in items" :key="img.id" cols="12" sm="6" md="4" lg="3">
-          <v-card>
-            <v-img :src="img.url" height="160" cover class="bg-grey-lighten-3">
+          <v-card variant="flat" class="h-100 d-flex flex-column">
+            <v-img :src="img.url" height="160" cover class="bg-surface-light">
               <template #error>
                 <div class="d-flex flex-column align-center justify-center fill-height text-medium-emphasis">
                   <v-icon icon="mdi-image-broken-variant" />
-                  <span class="text-caption mt-1">URL expired</span>
+                  <span class="text-body-small mt-1">URL kedaluwarsa</span>
                 </div>
               </template>
             </v-img>
-            <v-card-text class="pb-1">
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-caption text-medium-emphasis">ID</span>
-                <v-chip size="x-small" label>{{ img.id }}</v-chip>
+            <v-card-text class="pb-1 flex-grow-1">
+              <div class="d-flex align-center justify-space-between ga-2">
+                <span class="text-label-medium text-medium-emphasis">ID lampiran</span>
+                <v-chip size="small" color="secondary" variant="tonal">{{ img.id }}</v-chip>
               </div>
-              <div class="text-body-2 text-truncate mt-1" :title="img.original_filename">
+              <div class="text-body-medium font-weight-medium text-truncate mt-2" :title="img.original_filename">
                 {{ img.original_filename }}
               </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ formatBytes(img.size) }} · {{ formatDate(img.created_at) }}
+              <div class="d-flex flex-wrap gc-3 text-body-small text-medium-emphasis">
+                <span>{{ formatBytes(img.size) }}</span>
+                <span>{{ formatDate(img.created_at) }}</span>
               </div>
             </v-card-text>
-            <v-card-actions>
-              <v-btn size="small" variant="text" prepend-icon="mdi-content-copy" @click="copyId(img.id)">ID</v-btn>
-              <v-btn size="small" variant="text" icon="mdi-refresh" @click="onRefreshUrl(img)" />
+            <v-card-actions class="px-2">
+              <v-btn size="small" variant="text" color="primary" prepend-icon="mdi-content-copy" @click="copyId(img.id)">
+                Salin ID
+              </v-btn>
+              <v-tooltip text="Perbarui URL">
+                <template #activator="{ props: tip }">
+                  <v-btn
+                    v-bind="tip"
+                    size="small"
+                    variant="text"
+                    icon="mdi-refresh"
+                    :aria-label="`Perbarui URL gambar ${img.id}`"
+                    @click="onRefreshUrl(img)"
+                  />
+                </template>
+              </v-tooltip>
               <v-spacer />
-              <v-btn size="small" variant="text" color="error" icon="mdi-delete-outline" @click="askDelete(img)" />
+              <v-tooltip text="Hapus gambar">
+                <template #activator="{ props: tip }">
+                  <v-btn
+                    v-bind="tip"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    icon="mdi-delete-outline"
+                    :aria-label="`Hapus gambar ${img.id}`"
+                    @click="askDelete(img)"
+                  />
+                </template>
+              </v-tooltip>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -174,11 +207,17 @@ onMounted(() => load(1))
 
     <ConfirmDialog
       v-model="confirmOpen"
-      title="Delete image?"
-      :message="`This permanently deletes the image${target ? ' (ID ' + target.id + ')' : ''}. If it is used by a question, option, explanation, or material, the server will refuse.`"
-      confirm-text="Delete"
+      title="Hapus gambar?"
+      :message="`Gambar${target ? ' (ID ' + target.id + ')' : ''} akan dihapus permanen. Jika gambar masih dipakai di soal, pilihan jawaban, pembahasan, atau materi, server akan menolak penghapusan.`"
+      confirm-text="Hapus"
       :loading="deleting"
       @confirm="doDelete"
     />
   </div>
 </template>
+
+<style scoped>
+.images-upload__input {
+  min-width: 220px;
+}
+</style>

@@ -33,8 +33,8 @@ const saving = ref(false)
 const editForm = ref({ title: '', description: '', type: 'TWK', access_type: 'FREE' })
 const titleError = computed(() => {
   const title = editForm.value.title.trim()
-  if (!title) return 'Enter a title.'
-  if (title.length > 255) return 'Keep the title under 255 characters.'
+  if (!title) return 'Masukkan judul materi.'
+  if (title.length > 255) return 'Judul maksimal 255 karakter.'
   return ''
 })
 
@@ -94,7 +94,7 @@ async function saveEdit() {
     material.value = updated
     if (updated.file && updated.file.url) fileUrl.value = updated.file.url
     editOpen.value = false
-    uiStore.success('Material details saved.')
+    uiStore.success('Detail materi disimpan.')
   } catch (e) {
     uiStore.error(e.message)
   } finally {
@@ -107,105 +107,118 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Material detail">
+    <PageHeader title="Detail materi" subtitle="Informasi materi dan pratinjau file PDF.">
       <template #actions>
-        <v-btn v-if="material" variant="tonal" prepend-icon="mdi-pencil-outline" @click="openEdit">Edit details</v-btn>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push('/admin/materials')">Back</v-btn>
+        <v-btn v-if="material" variant="tonal" color="primary" prepend-icon="mdi-pencil-outline" @click="openEdit">
+          Ubah detail
+        </v-btn>
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push('/admin/materials')">Kembali</v-btn>
       </template>
     </PageHeader>
 
     <StatePanel :loading="loading" :error="error" @retry="load">
-      <v-card v-if="material" class="pa-6" max-width="900">
-        <div class="d-flex align-center justify-space-between mb-4">
-          <h2 class="text-h6 font-weight-bold mb-0">{{ material.title }}</h2>
+      <v-card v-if="material" class="pa-5 pa-md-6" max-width="960">
+        <div class="d-flex align-start justify-space-between ga-3 mb-2">
+          <h2 class="text-title-large text-break material-detail__title">{{ material.title }}</h2>
           <StatusChip :value="isReleased(material.is_released) ? 'RELEASED' : 'UNRELEASED'" />
         </div>
 
-        <p class="text-body-2 text-medium-emphasis mb-4">
-          {{ material.description || 'No description.' }}
+        <p class="text-body-medium text-medium-emphasis mb-4">
+          {{ material.description || 'Belum ada deskripsi.' }}
         </p>
 
-        <v-row class="mb-1">
-          <v-col cols="4" class="text-medium-emphasis">Type</v-col>
-          <v-col cols="8"><StatusChip :value="material.type" /></v-col>
+        <v-row no-gutters align="center" class="py-3">
+          <v-col cols="5" sm="3" class="text-body-medium text-medium-emphasis">Jenis</v-col>
+          <v-col cols="7" sm="9"><StatusChip :value="material.type" /></v-col>
         </v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-1">
-          <v-col cols="4" class="text-medium-emphasis">Access</v-col>
-          <v-col cols="8"><StatusChip :value="material.access_type" /></v-col>
+        <v-divider />
+        <v-row no-gutters align="center" class="py-3">
+          <v-col cols="5" sm="3" class="text-body-medium text-medium-emphasis">Akses</v-col>
+          <v-col cols="7" sm="9"><StatusChip :value="material.access_type" /></v-col>
         </v-row>
-        <v-divider class="my-2" />
-        <v-row class="mb-1">
-          <v-col cols="4" class="text-medium-emphasis">Created</v-col>
-          <v-col cols="8">{{ formatDate(material.created_at) }}</v-col>
+        <v-divider />
+        <v-row no-gutters align="center" class="py-3">
+          <v-col cols="5" sm="3" class="text-body-medium text-medium-emphasis">Dibuat</v-col>
+          <v-col cols="7" sm="9" class="text-body-medium">{{ formatDate(material.created_at) }}</v-col>
         </v-row>
 
-        <v-divider class="my-4" />
+        <v-divider class="mt-1 mb-5" />
 
-        <div class="d-flex align-center justify-space-between mb-3">
-          <div>
-            <h3 class="text-subtitle-1 font-weight-bold mb-0">File</h3>
-            <div v-if="material.file" class="text-caption text-medium-emphasis">
-              {{ material.file.original_filename }} · {{ material.file.mime_type }} ·
-              {{ formatBytes(material.file.size) }}
+        <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-4">
+          <div class="d-flex align-center ga-3 material-detail__file">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-file-pdf-box" color="primary" />
+            </v-avatar>
+            <div class="material-detail__file">
+              <h3 class="text-title-medium">File</h3>
+              <div v-if="material.file" class="d-flex flex-wrap gc-3 text-body-small text-medium-emphasis">
+                <span class="text-break">{{ material.file.original_filename }}</span>
+                <span>{{ material.file.mime_type }}</span>
+                <span>{{ formatBytes(material.file.size) }}</span>
+              </div>
             </div>
           </div>
           <v-btn
             v-if="material.file"
             variant="text"
+            color="primary"
             prepend-icon="mdi-refresh"
             :loading="refreshingFile"
             @click="reloadFile"
           >
-            Reload file
+            Muat ulang file
           </v-btn>
         </div>
 
         <template v-if="material.file">
-          <div v-if="isPdf(material) && fileUrl" class="pdf-frame">
-            <iframe :src="fileUrl" title="Material PDF" width="100%" height="100%" />
+          <div v-if="isPdf(material) && fileUrl" class="pdf-frame border rounded-lg">
+            <iframe :src="fileUrl" title="PDF materi" width="100%" height="100%" />
           </div>
           <v-alert v-else-if="isPdf(material)" type="warning" variant="tonal" density="comfortable">
-            Preview link is unavailable. Select "Reload file" to generate a fresh link.
+            Tautan pratinjau sudah tidak berlaku. Pilih "Muat ulang file" untuk membuat tautan baru.
           </v-alert>
           <v-alert v-else type="info" variant="tonal" density="comfortable">
-            Inline preview is only available for PDF files.
+            Pratinjau langsung hanya tersedia untuk file PDF.
           </v-alert>
         </template>
-        <p v-else class="text-body-2 text-medium-emphasis mb-0">No file attached.</p>
+        <p v-else class="text-body-medium text-medium-emphasis mb-0">Belum ada file terlampir.</p>
       </v-card>
     </StatePanel>
 
     <v-dialog v-model="editOpen" max-width="560" :persistent="saving">
-      <v-card class="pa-2">
-        <v-card-title class="text-h6">Edit material details</v-card-title>
+      <v-card class="pa-3">
+        <v-card-title class="text-title-large text-wrap">Ubah detail materi</v-card-title>
         <v-card-text>
           <form novalidate @submit.prevent="saveEdit">
-            <v-text-field
-              v-model="editForm.title"
-              label="Title"
-              :error-messages="titleError ? [titleError] : []"
-              counter="255"
-            />
-            <v-textarea v-model="editForm.description" label="Description (optional)" variant="outlined" rows="3" />
-            <v-select
-              v-model="editForm.type"
-              :items="SECTION_TYPE_OPTIONS"
-              label="Type"
-              variant="outlined"
-              density="comfortable"
-            />
-            <v-select
-              v-model="editForm.access_type"
-              :items="ACCESS_TYPE_OPTIONS"
-              label="Access type"
-              variant="outlined"
-              density="comfortable"
-            />
-            <div class="d-flex justify-end ga-2">
-              <v-btn variant="text" :disabled="saving" @click="editOpen = false">Cancel</v-btn>
+            <section aria-labelledby="material-edit-details">
+              <h3 id="material-edit-details" class="text-title-small mb-3">Detail materi</h3>
+              <v-text-field
+                v-model="editForm.title"
+                label="Judul"
+                :error-messages="titleError ? [titleError] : []"
+                counter="255"
+              />
+              <v-textarea v-model="editForm.description" label="Deskripsi (opsional)" rows="3" />
+            </section>
+
+            <section aria-labelledby="material-edit-settings" class="mt-2">
+              <h3 id="material-edit-settings" class="text-title-small mb-3">Pengaturan</h3>
+              <v-select
+                v-model="editForm.type"
+                :items="SECTION_TYPE_OPTIONS"
+                label="Jenis"
+              />
+              <v-select
+                v-model="editForm.access_type"
+                :items="ACCESS_TYPE_OPTIONS"
+                label="Akses"
+              />
+            </section>
+
+            <div class="d-flex justify-end ga-2 mt-2">
+              <v-btn variant="text" :disabled="saving" @click="editOpen = false">Batal</v-btn>
               <v-btn type="submit" color="primary" variant="flat" :loading="saving" :disabled="Boolean(titleError)">
-                Save details
+                Simpan perubahan
               </v-btn>
             </div>
           </form>
@@ -216,12 +229,14 @@ onMounted(load)
 </template>
 
 <style scoped>
+.material-detail__title,
+.material-detail__file {
+  min-width: 0;
+}
 .pdf-frame {
   width: 100%;
   height: 80vh;
   min-height: 480px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 8px;
   overflow: hidden;
 }
 .pdf-frame iframe {

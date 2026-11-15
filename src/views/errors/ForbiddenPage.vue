@@ -8,12 +8,23 @@ const { homeRoute } = storeToRefs(authStore)
 </script>
 
 <template>
-  <v-container class="py-16 text-center" style="max-width: 520px">
-    <v-icon icon="mdi-lock-outline" color="error" size="64" class="mb-4" />
-    <h1 class="text-h4 font-weight-bold mb-2">Access denied</h1>
-    <p class="text-body-1 text-medium-emphasis mb-6">
-      You don't have permission to view this page.
-    </p>
-    <v-btn :to="homeRoute" color="primary" variant="flat">Go to dashboard</v-btn>
-  </v-container>
+  <div class="app-content px-4 pt-6 pt-md-16 pb-12 pb-md-16">
+    <v-card class="status-card rounded-xl pa-8 pa-sm-12 mx-auto text-center">
+      <v-avatar color="error" variant="tonal" size="64" class="mb-5">
+        <v-icon icon="mdi-lock-outline" size="32" />
+      </v-avatar>
+      <h1 class="text-headline-medium mb-2">Akses ditolak</h1>
+      <p class="text-body-large text-medium-emphasis mb-8">
+        Akunmu tidak punya izin untuk membuka halaman ini.
+      </p>
+      <v-btn :to="homeRoute" :active="false" color="primary" variant="flat" size="large">Kembali ke halaman utama</v-btn>
+    </v-card>
+  </div>
 </template>
+
+<style scoped>
+.status-card {
+  width: 100%;
+  max-width: 520px;
+}
+</style>

@@ -10,29 +10,37 @@
 // Exit is handled inside the attempt page, so leaving routes back through the
 // AttemptPage's onBeforeRouteLeave guard without resetting the attempt store;
 // saved answers and the server-tracked timer are preserved. The layout is
-// responsive (fluid container) so it works on desktop and mobile.
+// responsive so it works on desktop and mobile.
 import { RouterView } from 'vue-router'
+import AppBrand from '../components/AppBrand.vue'
 </script>
 
 <template>
   <v-app>
-    <v-app-bar flat border density="comfortable">
-      <v-container class="d-flex align-center py-0">
-        <div class="d-flex align-center text-primary">
-          <v-icon icon="mdi-school-outline" class="me-2" />
-          <span class="text-subtitle-1 font-weight-bold">Tryout App</span>
-        </div>
+    <v-app-bar color="surface" height="64" class="assessment-bar">
+      <div class="app-content app-content--wide d-flex align-center px-4 px-md-8">
+        <AppBrand />
         <v-spacer />
-        <v-chip size="small" variant="tonal" color="secondary" prepend-icon="mdi-pencil-ruler">
-          Assessment in progress
+        <v-chip size="small" variant="tonal" color="primary" prepend-icon="mdi-pencil-outline">
+          Sedang mengerjakan
         </v-chip>
-      </v-container>
+      </div>
     </v-app-bar>
 
     <v-main>
-      <v-container class="py-4 py-md-6">
+      <div class="app-content app-content--wide px-4 px-md-8 py-4 py-md-6">
         <RouterView />
-      </v-container>
+      </div>
     </v-main>
   </v-app>
 </template>
+
+<style scoped>
+.assessment-bar {
+  border-bottom: 1px solid rgb(var(--app-line));
+}
+
+.app-content--wide {
+  max-width: 1280px;
+}
+</style>

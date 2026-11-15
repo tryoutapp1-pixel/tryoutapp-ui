@@ -39,9 +39,9 @@ const touched = ref(false)
 
 /** @type {{ title: string, value: Difficulty }[]} */
 const difficultyOptions = [
-  { title: 'Easy', value: 'EASY' },
-  { title: 'Medium', value: 'MEDIUM' },
-  { title: 'Hard', value: 'HARD' }
+  { title: 'Mudah', value: 'EASY' },
+  { title: 'Sedang', value: 'MEDIUM' },
+  { title: 'Sulit', value: 'HARD' }
 ]
 
 watch(
@@ -74,50 +74,51 @@ function onSubmit() {
 
 <template>
   <v-dialog :model-value="props.modelValue" max-width="520" persistent>
-    <v-card class="pa-2">
-      <v-card-title class="text-h6">Share your feedback</v-card-title>
+    <v-card class="pa-3">
+      <v-card-title class="text-title-large text-wrap">Beri masukan</v-card-title>
       <v-card-text>
-        <p class="text-body-2 text-medium-emphasis mb-4">
-          Rate this assessment to continue. You only need to do this once per assessment.
+        <p class="text-body-medium text-medium-emphasis mb-5">
+          Beri penilaian untuk paket soal ini agar bisa lanjut ke pembahasan. Kamu cukup mengisinya sekali
+          untuk setiap paket soal.
         </p>
 
-        <div class="mb-4">
-          <label id="feedback-rating-label" class="text-subtitle-2 d-block mb-1">Rating</label>
+        <div class="mb-5">
+          <label id="feedback-rating-label" class="text-title-small d-block mb-1">Penilaian</label>
           <v-rating
             v-model="rating"
             aria-labelledby="feedback-rating-label"
             length="5"
-            color="amber"
-            active-color="amber"
+            color="premium-ink"
+            active-color="premium-ink"
             hover
             :disabled="props.submitting"
           />
-          <div v-if="touched && rating < 1" class="text-caption text-error">Select a rating from 1 to 5.</div>
+          <div v-if="touched && rating < 1" class="text-body-small text-error">Pilih nilai dari 1 sampai 5.</div>
         </div>
 
         <v-select
           v-model="difficulty"
           :items="difficultyOptions"
-          label="Difficulty"
+          label="Tingkat kesulitan"
           variant="outlined"
           density="comfortable"
           :disabled="props.submitting"
-          :error-messages="touched && !difficulty ? ['Select how difficult it felt.'] : []"
+          :error-messages="touched && !difficulty ? ['Pilih seberapa sulit paket soal ini menurutmu.'] : []"
         />
 
         <v-textarea
           v-model="comment"
-          label="Comment (optional)"
+          label="Komentar (opsional)"
           variant="outlined"
           rows="3"
           :counter="MAX_COMMENT"
           :disabled="props.submitting"
-          :rules="[(v) => !v || v.length <= MAX_COMMENT || `Keep the comment under ${MAX_COMMENT} characters.`]"
+          :rules="[(v) => !v || v.length <= MAX_COMMENT || `Komentar maksimal ${MAX_COMMENT} karakter.`]"
         />
       </v-card-text>
-      <v-card-actions class="justify-end">
+      <v-card-actions class="justify-end px-4 pb-4">
         <v-btn color="primary" variant="flat" :loading="props.submitting" @click="onSubmit">
-          Submit feedback
+          Kirim masukan
         </v-btn>
       </v-card-actions>
     </v-card>

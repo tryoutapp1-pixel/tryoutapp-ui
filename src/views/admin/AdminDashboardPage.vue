@@ -17,25 +17,65 @@ const { user } = storeToRefs(authStore)
 
 /** @type {DashboardCard[]} */
 const cards = [
-  { title: 'Users', text: 'Browse registered accounts.', to: '/admin/users', icon: 'mdi-account-group-outline' },
-  { title: 'Images', text: 'Upload and manage image files.', to: '/admin/images', icon: 'mdi-image-multiple-outline' },
-  { title: 'Materials', text: 'Manage and release learning materials.', to: '/admin/materials', icon: 'mdi-book-open-page-variant-outline' },
-  { title: 'Assessments', text: 'Create assessments and upload questions.', to: '/admin/assessments', icon: 'mdi-clipboard-text-outline' },
-  { title: 'Feedback', text: 'Read learner ratings and comments.', to: '/admin/feedback', icon: 'mdi-message-star-outline' }
+  { title: 'Pengguna', text: 'Lihat akun terdaftar dan statusnya.', to: '/admin/users', icon: 'mdi-account-group-outline' },
+  { title: 'Gambar', text: 'Unggah dan kelola file gambar.', to: '/admin/images', icon: 'mdi-image-multiple-outline' },
+  { title: 'Materi', text: 'Kelola dan terbitkan materi belajar.', to: '/admin/materials', icon: 'mdi-book-open-page-variant-outline' },
+  { title: 'Paket soal', text: 'Buat paket soal dan unggah soalnya.', to: '/admin/assessments', icon: 'mdi-clipboard-text-outline' },
+  { title: 'Masukan', text: 'Baca rating dan komentar dari pengguna.', to: '/admin/feedback', icon: 'mdi-message-star-outline' }
 ]
 </script>
 
 <template>
   <div>
-    <PageHeader :title="`Welcome, ${user ? user.name : 'Admin'}`" subtitle="Administration dashboard." />
+    <PageHeader
+      :title="`Halo, ${user ? user.name : 'Admin'}`"
+      subtitle="Kelola pengguna, konten belajar, dan masukan dari satu tempat."
+    />
     <v-row>
-      <v-col v-for="card in cards" :key="card.to" cols="12" sm="6" md="4" lg="3">
-        <v-card :to="card.to" class="pa-5 h-100" hover>
-          <v-icon :icon="card.icon" color="primary" size="32" class="mb-3" />
-          <h3 class="text-subtitle-1 font-weight-bold mb-1">{{ card.title }}</h3>
-          <p class="text-body-2 text-medium-emphasis mb-0">{{ card.text }}</p>
+      <!-- Paket soal is the most used module, so its tile is wider and raised;
+           the other tiles stay flat. -->
+      <v-col
+        v-for="card in cards"
+        :key="card.to"
+        cols="12"
+        sm="6"
+        :md="card.to === '/admin/assessments' ? 8 : 4"
+      >
+        <v-card
+          :to="card.to"
+          :variant="card.to === '/admin/assessments' ? 'elevated' : 'flat'"
+          class="d-flex align-center ga-4 pa-5 h-100"
+          hover
+        >
+          <v-avatar
+            :color="card.to === '/admin/assessments' ? 'primary' : 'surface-light'"
+            rounded="lg"
+            :size="card.to === '/admin/assessments' ? 52 : 44"
+          >
+            <v-icon
+              :icon="card.icon"
+              :color="card.to === '/admin/assessments' ? undefined : 'primary'"
+              :size="card.to === '/admin/assessments' ? 28 : 24"
+            />
+          </v-avatar>
+          <div class="flex-grow-1 dashboard-tile__text">
+            <h2
+              :class="card.to === '/admin/assessments' ? 'text-title-large' : 'text-title-medium'"
+              class="mb-1"
+            >
+              {{ card.title }}
+            </h2>
+            <p class="text-body-medium text-medium-emphasis mb-0">{{ card.text }}</p>
+          </div>
+          <v-icon icon="mdi-chevron-right" class="text-medium-emphasis" aria-hidden="true" />
         </v-card>
       </v-col>
     </v-row>
   </div>
 </template>
+
+<style scoped>
+.dashboard-tile__text {
+  min-width: 0;
+}
+</style>

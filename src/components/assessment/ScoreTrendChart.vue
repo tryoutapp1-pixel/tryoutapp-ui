@@ -39,7 +39,7 @@ import { computed } from 'vue'
 const props = defineProps({
   points: { type: Array, default: () => [] },
   height: { type: Number, default: 220 },
-  color: { type: String, default: '#1867C0' }
+  color: { type: String, default: '#0A6CBF' }
 })
 
 const width = 640
@@ -68,25 +68,44 @@ const geom = computed(() => {
 </script>
 
 <template>
-  <svg v-if="geom" :viewBox="`0 0 ${width} ${height}`" class="trend-chart" role="img" aria-label="Score trend">
+  <svg v-if="geom" :viewBox="`0 0 ${width} ${height}`" class="trend-chart" role="img" aria-label="Tren skor">
+    <!-- light grid: top (max) and middle lines; decorative only -->
+    <line
+      :x1="padding.left"
+      :y1="padding.top"
+      :x2="width - padding.right"
+      :y2="padding.top"
+      stroke="rgb(217 228 239)"
+      stroke-width="1"
+      stroke-dasharray="4 4"
+    />
+    <line
+      :x1="padding.left"
+      :y1="padding.top + geom.innerH / 2"
+      :x2="width - padding.right"
+      :y2="padding.top + geom.innerH / 2"
+      stroke="rgb(217 228 239)"
+      stroke-width="1"
+      stroke-dasharray="4 4"
+    />
     <!-- baseline -->
     <line
       :x1="padding.left"
       :y1="height - padding.bottom"
       :x2="width - padding.right"
       :y2="height - padding.bottom"
-      stroke="rgba(0,0,0,0.15)"
-      stroke-width="1"
+      stroke="rgb(217 228 239)"
+      stroke-width="1.5"
     />
     <!-- max/min labels -->
-    <text :x="8" :y="padding.top + 4" font-size="11" fill="rgba(0,0,0,0.5)">{{ geom.maxV }}</text>
-    <text :x="8" :y="height - padding.bottom" font-size="11" fill="rgba(0,0,0,0.5)">{{ geom.minV }}</text>
+    <text :x="8" :y="padding.top + 4" font-size="12" fill="rgb(11 37 64 / 0.68)">{{ geom.maxV }}</text>
+    <text :x="8" :y="height - padding.bottom" font-size="12" fill="rgb(11 37 64 / 0.68)">{{ geom.minV }}</text>
     <!-- line -->
-    <path :d="geom.line" fill="none" :stroke="color" stroke-width="2.5" />
+    <path :d="geom.line" fill="none" :stroke="color" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
     <!-- points -->
     <g v-for="(c, i) in geom.coords" :key="i">
-      <circle :cx="c.x" :cy="c.y" r="4" :fill="color" />
-      <text :x="c.x" :y="c.y - 10" font-size="11" text-anchor="middle" fill="rgba(0,0,0,0.7)">
+      <circle :cx="c.x" :cy="c.y" r="4.5" :fill="color" stroke="#FFFFFF" stroke-width="2" />
+      <text :x="c.x" :y="c.y - 10" font-size="12" font-weight="650" text-anchor="middle" fill="rgb(11 37 64)">
         {{ c.value }}
       </text>
     </g>
@@ -98,5 +117,6 @@ const geom = computed(() => {
   width: 100%;
   height: auto;
   display: block;
+  font-variant-numeric: tabular-nums;
 }
 </style>

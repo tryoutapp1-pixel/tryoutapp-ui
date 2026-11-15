@@ -15,6 +15,7 @@ import { formatCurrency, formatDate } from '../../lib/format'
  * @property {string} title - Column label
  * @property {keyof import('../../types/api').Transaction} key - Transaction field shown in the column
  * @property {boolean} sortable
+ * @property {'start'|'center'|'end'} [align] - Column alignment (amounts align right)
  */
 
 const store = useSubscriptionStore()
@@ -23,11 +24,11 @@ const { transactions, transactionsPagination, transactionsLoading, transactionsE
 
 /** @type {TableHeader[]} */
 const headers = [
-  { title: 'Order ID', key: 'order_id', sortable: false },
-  { title: 'Amount', key: 'amount', sortable: false },
-  { title: 'Method', key: 'payment_method', sortable: false },
+  { title: 'ID pesanan', key: 'order_id', sortable: false },
+  { title: 'Jumlah', key: 'amount', sortable: false, align: 'end' },
+  { title: 'Metode', key: 'payment_method', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
-  { title: 'Date', key: 'created_at', sortable: false }
+  { title: 'Tanggal', key: 'created_at', sortable: false }
 ]
 
 /** @param {number} [page=1] */
@@ -40,17 +41,17 @@ onMounted(() => load(1))
 
 <template>
   <div>
-    <PageHeader title="Transactions" subtitle="Your payment history." />
+    <PageHeader title="Transaksi" subtitle="Riwayat pembayaranmu." />
 
     <StatePanel
       :loading="transactionsLoading"
       :error="transactionsError"
       :empty="!transactionsLoading && !transactionsError && transactions.length === 0"
-      empty-text="You have no transactions yet."
+      empty-text="Belum ada transaksi. Pembayaran yang kamu lakukan akan muncul di sini."
       empty-icon="mdi-receipt-text-outline"
       @retry="load(transactionsPagination.page)"
     >
-      <v-card variant="outlined">
+      <v-card variant="flat" class="overflow-hidden">
         <v-data-table
           :headers="headers"
           :items="transactions"
@@ -58,19 +59,19 @@ onMounted(() => load(1))
           hide-default-footer
         >
           <template #[`item.order_id`]="{ item }">
-            <span class="font-mono text-body-2">{{ item.order_id }}</span>
+            <span class="font-mono text-body-medium text-no-wrap">{{ item.order_id }}</span>
           </template>
           <template #[`item.amount`]="{ item }">
-            {{ formatCurrency(item.amount) }}
+            <span class="tx-amount text-title-small text-no-wrap">{{ formatCurrency(item.amount) }}</span>
           </template>
           <template #[`item.payment_method`]="{ item }">
-            {{ item.payment_method || '-' }}
+            <span class="text-body-medium">{{ item.payment_method || '-' }}</span>
           </template>
           <template #[`item.status`]="{ item }">
             <StatusChip :value="item.status" />
           </template>
           <template #[`item.created_at`]="{ item }">
-            {{ formatDate(item.created_at) }}
+            <span class="tx-date text-body-medium text-medium-emphasis text-no-wrap">{{ formatDate(item.created_at) }}</span>
           </template>
         </v-data-table>
       </v-card>
@@ -89,6 +90,11 @@ onMounted(() => load(1))
 
 <style scoped>
 .font-mono {
-  font-family: monospace;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+.tx-amount,
+.tx-date {
+  font-variant-numeric: tabular-nums;
 }
 </style>

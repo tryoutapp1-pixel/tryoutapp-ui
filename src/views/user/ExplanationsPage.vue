@@ -57,21 +57,23 @@ onMounted(() => load())
 <template>
   <div>
     <PageHeader
-      :title="`${kind === 'tryout' ? 'Try Out' : 'Latihan'} answer review`"
-      :subtitle="attemptId ? `Attempt #${attemptId}` : 'Your latest attempt'"
+      :title="`Pembahasan ${kind === 'tryout' ? 'Try Out' : 'Latihan'}`"
+      :subtitle="attemptId ? `Pengerjaan #${attemptId}` : 'Pengerjaan terakhirmu'"
     >
       <template #actions>
         <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: `user-${kind}-history`, params: { id: assessmentId } }">
-          Back
+          Kembali ke riwayat
         </v-btn>
       </template>
     </PageHeader>
 
-    <v-card v-if="forbidden" class="pa-8 text-center" variant="outlined">
-      <v-icon icon="mdi-lock-outline" color="warning" size="48" class="mb-3" />
-      <h3 class="text-h6 font-weight-bold mb-2">Review locked</h3>
-      <p class="text-body-2 text-medium-emphasis mb-0">
-        Finish this assessment to review your answers. Premium packages need a Premium plan.
+    <v-card v-if="forbidden" class="pa-8 text-center rounded-xl">
+      <v-avatar color="warning" variant="tonal" size="64" class="mb-4">
+        <v-icon icon="mdi-lock-outline" size="32" />
+      </v-avatar>
+      <h2 class="text-title-large mb-2">Pembahasan terkunci</h2>
+      <p class="text-body-medium text-medium-emphasis mb-0 mx-auto locked-text">
+        Selesaikan paket soal ini untuk melihat pembahasan. Paket soal Premium memerlukan langganan Premium.
       </p>
     </v-card>
 
@@ -80,10 +82,16 @@ onMounted(() => load())
       :loading="loading"
       :error="error"
       :empty="!loading && !error && questions.length === 0"
-      empty-text="This assessment has no questions to review."
+      empty-text="Paket soal ini belum punya soal untuk dibahas."
       @retry="load()"
     >
       <ExplanationList :questions="questions" :show-explanation="isPremium" @refresh="load({ silent: true })" />
     </StatePanel>
   </div>
 </template>
+
+<style scoped>
+.locked-text {
+  max-width: 48ch;
+}
+</style>

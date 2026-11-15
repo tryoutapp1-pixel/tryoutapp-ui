@@ -11,7 +11,7 @@ import { formatDuration } from '../../lib/format'
  * @typedef {Object} AttemptTimerProps
  * @property {() => number|null} remaining - Returns remaining seconds (null if untimed).
  *   Provided by the attempt store so the backend deadline stays the single source of truth.
- * @property {number} [warnAtSeconds] - Below this many seconds the chip turns red
+ * @property {number} [warnAtSeconds] - At or below this many seconds the timer switches to its low-time look
  */
 
 /** @type {AttemptTimerProps} */
@@ -51,13 +51,32 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <v-chip
-    :color="seconds <= warnAtSeconds ? 'error' : 'primary'"
-    variant="flat"
-    size="large"
-    prepend-icon="mdi-timer-outline"
-    class="font-weight-bold"
+  <div
+    class="attempt-timer d-flex align-center ga-3 px-3 py-2 rounded-lg"
+    :class="seconds <= warnAtSeconds ? 'attempt-timer--low' : 'bg-surface-light'"
+    role="timer"
   >
-    {{ formatDuration(seconds) }}
-  </v-chip>
+    <v-icon
+      :icon="seconds <= warnAtSeconds ? 'mdi-timer-alert-outline' : 'mdi-timer-outline'"
+      :color="seconds <= warnAtSeconds ? 'error' : 'primary'"
+      size="28"
+    />
+    <div class="d-flex flex-column ga-1">
+      <span class="text-body-small text-medium-emphasis">
+        {{ seconds <= warnAtSeconds ? 'Waktu hampir habis' : 'Sisa waktu' }}
+      </span>
+      <span class="app-figure text-headline-small" :class="{ 'text-error': seconds <= warnAtSeconds }">
+        {{ formatDuration(seconds) }}
+      </span>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+/* Low time: light coral tint plus a coral outline, so the state is shown by
+   the icon, the label and the outline as well as the color. */
+.attempt-timer--low {
+  background: rgba(var(--v-theme-error), 0.08);
+  box-shadow: inset 0 0 0 1.5px rgb(var(--v-theme-error));
+}
+</style>

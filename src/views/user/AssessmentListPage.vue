@@ -25,7 +25,7 @@ const isTryout = computed(() => kind.value === 'tryout')
 const slice = computed(() => store[kind.value])
 
 const heading = computed(() => (isTryout.value ? 'Try Out' : 'Latihan'))
-const subtitle = computed(() => (isTryout.value ? 'Timed assessment packages.' : 'Untimed practice packages.'))
+const subtitle = computed(() => (isTryout.value ? 'Paket soal berwaktu untuk menguji kesiapanmu seperti di hari ujian.' : 'Paket soal tanpa batas waktu. Kerjakan pelan-pelan dan ulangi kapan saja.'))
 
 /** @param {number} [page=1] */
 function load(page = 1) {
@@ -49,49 +49,53 @@ watch(kind, () => load(1))
       :loading="slice.loading"
       :error="slice.error"
       :empty="!slice.loading && !slice.error && slice.items.length === 0"
-      :empty-text="`No ${heading} packages are available yet.`"
+      :empty-text="`Belum ada paket ${heading} yang bisa dikerjakan. Sambil menunggu, baca Materi dulu.`"
       empty-icon="mdi-clipboard-text-outline"
       @retry="load(slice.pagination.page)"
     >
       <v-row>
         <v-col v-for="a in slice.items" :key="a.id" cols="12" sm="6" md="4">
           <v-card
-            variant="outlined"
             class="pa-5 h-100 d-flex flex-column"
             :class="{ 'card-locked': isLocked(a) }"
-            :aria-label="isLocked(a) ? `${a.title}, Premium only` : a.title"
+            :aria-label="isLocked(a) ? `${a.title}, khusus Premium` : a.title"
             link
             hover
             @click="open(a)"
             @keydown.enter="open(a)"
           >
-            <div class="d-flex align-center justify-space-between mb-2">
-              <StatusChip :value="a.type" />
-              <StatusChip :value="a.access_type" />
+            <div class="d-flex align-start justify-space-between ga-3 mb-4">
+              <v-avatar color="surface-light" rounded="lg" size="44">
+                <v-icon :icon="isTryout ? 'mdi-timer-outline' : 'mdi-pencil-outline'" color="primary" />
+              </v-avatar>
+              <div class="d-flex flex-wrap justify-end ga-2">
+                <StatusChip :value="a.type" />
+                <StatusChip :value="a.access_type" />
+              </div>
             </div>
-            <h3 class="text-subtitle-1 font-weight-bold mb-1">{{ a.title }}</h3>
-            <p class="text-body-2 text-medium-emphasis mb-3 flex-grow-1">
-              {{ a.description || 'No description.' }}
+            <h2 class="text-title-medium mb-1">{{ a.title }}</h2>
+            <p class="text-body-medium text-medium-emphasis mb-4 flex-grow-1">
+              {{ a.description || 'Belum ada deskripsi.' }}
             </p>
-            <div class="d-flex align-center ga-4 text-caption text-medium-emphasis">
+            <div class="d-flex flex-wrap align-center gc-4 gr-1 pt-3 border-t text-body-small text-medium-emphasis">
               <span class="d-flex align-center ga-1">
                 <v-icon icon="mdi-help-circle-outline" size="16" />
-                {{ a.question_count }} questions
+                {{ a.question_count }} soal
               </span>
               <span v-if="isTryout && a.duration_minutes" class="d-flex align-center ga-1">
                 <v-icon icon="mdi-timer-outline" size="16" />
-                {{ a.duration_minutes }} min
+                {{ a.duration_minutes }} menit
               </span>
-              <span v-if="isLocked(a)" class="d-flex align-center ga-1 ms-auto text-amber-darken-3">
+              <span v-if="isLocked(a)" class="d-flex align-center ga-1 ms-auto text-premium-ink font-weight-bold">
                 <v-icon icon="mdi-lock-outline" size="16" />
-                Premium
+                Terkunci
               </span>
             </div>
           </v-card>
         </v-col>
       </v-row>
 
-      <div v-if="slice.pagination.totalPages > 1" class="d-flex justify-center mt-4">
+      <div v-if="slice.pagination.totalPages > 1" class="d-flex justify-center mt-6">
         <v-pagination
           :model-value="slice.pagination.page"
           :length="slice.pagination.totalPages"
@@ -103,14 +107,16 @@ watch(kind, () => load(1))
 
     <PremiumRequiredDialog
       v-model="dialogOpen"
-      :title="`This ${heading} is for Premium members`"
-      :message="`Upgrade to Premium to work on every ${heading} package and to read the full explanation for each question.`"
+      :title="`${heading} ini khusus Premium`"
+      :message="`Upgrade ke Premium untuk mengerjakan semua paket ${heading} dan membaca pembahasan lengkap tiap soal.`"
     />
   </div>
 </template>
 
 <style scoped>
+/* Locked (Premium) packages sit on a faint blue fill so they read as
+   unavailable without lowering text contrast. */
 .card-locked {
-  background-color: rgba(var(--v-theme-on-surface), 0.02);
+  background-color: rgba(var(--v-theme-surface-light), 0.55);
 }
 </style>

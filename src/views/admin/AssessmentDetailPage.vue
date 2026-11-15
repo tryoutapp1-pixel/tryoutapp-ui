@@ -115,144 +115,200 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Assessment detail">
+    <PageHeader title="Detail paket soal" subtitle="Ringkasan pengaturan paket soal dan daftar soalnya.">
       <template #actions>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push('/admin/assessments')">Back</v-btn>
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" @click="router.push('/admin/assessments')">Kembali</v-btn>
         <v-btn
           v-if="assessment"
           variant="tonal"
+          color="primary"
           prepend-icon="mdi-pencil-outline"
           @click="router.push(`/admin/assessments/${assessment.id}/edit`)"
         >
-          Edit
+          Ubah paket soal
         </v-btn>
       </template>
     </PageHeader>
 
     <StatePanel :loading="loading" :error="error" @retry="load">
       <template v-if="assessment">
-        <v-card class="pa-6 mb-6">
-          <div class="d-flex align-center justify-space-between mb-3">
-            <h2 class="text-h6 font-weight-bold mb-0">{{ assessment.title }}</h2>
-            <div class="d-flex ga-2">
-              <StatusChip :value="assessment.type" />
-              <StatusChip :value="assessment.access_type" />
-              <StatusChip :value="isReleased(assessment.is_released) ? 'RELEASED' : 'UNRELEASED'" />
-            </div>
-          </div>
-          <p class="text-body-2 text-medium-emphasis mb-4">{{ assessment.description || 'No description.' }}</p>
+        <!-- Facts summary -->
+        <v-card class="pa-5 pa-md-6 mb-6">
+          <h2 class="text-title-large text-break mb-1">{{ assessment.title }}</h2>
+          <p class="text-body-medium text-medium-emphasis mb-5">{{ assessment.description || 'Belum ada deskripsi.' }}</p>
 
-          <v-row>
-            <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Duration</div>
-              <div>{{ assessment.duration_minutes != null ? assessment.duration_minutes + ' min' : '— (no timer)' }}</div>
+          <v-row dense>
+            <v-col cols="6" md="3">
+              <div class="bg-surface-light rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">Jenis</div>
+                <StatusChip :value="assessment.type" />
+              </div>
             </v-col>
-            <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Pass TWK</div>
-              <div>{{ assessment.passing_score_twk }}</div>
+            <v-col cols="6" md="3">
+              <div class="bg-surface-light rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">Akses</div>
+                <StatusChip :value="assessment.access_type" />
+              </div>
             </v-col>
-            <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Pass TIU</div>
-              <div>{{ assessment.passing_score_tiu }}</div>
+            <v-col cols="6" md="3">
+              <div class="bg-surface-light rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">Durasi</div>
+                <div class="text-title-medium">
+                  {{ assessment.duration_minutes != null ? assessment.duration_minutes + ' menit' : 'Tanpa timer' }}
+                </div>
+              </div>
             </v-col>
-            <v-col cols="6" sm="3">
-              <div class="text-caption text-medium-emphasis">Pass TKP</div>
-              <div>{{ assessment.passing_score_tkp }}</div>
+            <v-col cols="6" md="3">
+              <div class="bg-surface-light rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">Status terbit</div>
+                <StatusChip :value="isReleased(assessment.is_released) ? 'RELEASED' : 'UNRELEASED'" />
+              </div>
+            </v-col>
+          </v-row>
+
+          <h3 class="text-title-small mt-5 mb-2">Nilai ambang batas</h3>
+          <v-row dense>
+            <v-col cols="4">
+              <div class="border rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">TWK</div>
+                <div class="app-figure text-title-large">{{ assessment.passing_score_twk }}</div>
+              </div>
+            </v-col>
+            <v-col cols="4">
+              <div class="border rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">TIU</div>
+                <div class="app-figure text-title-large">{{ assessment.passing_score_tiu }}</div>
+              </div>
+            </v-col>
+            <v-col cols="4">
+              <div class="border rounded-lg pa-3 h-100">
+                <div class="text-body-small text-medium-emphasis mb-1">TKP</div>
+                <div class="app-figure text-title-large">{{ assessment.passing_score_tkp }}</div>
+              </div>
             </v-col>
           </v-row>
         </v-card>
 
-        <!-- Question package -->
-        <v-card class="pa-6">
-          <div class="d-flex align-center justify-space-between mb-4">
-            <h3 class="text-subtitle-1 font-weight-bold mb-0">Question package</h3>
+        <!-- Question list -->
+        <v-card class="pa-5 pa-md-6">
+          <div class="d-flex flex-wrap align-center justify-space-between ga-3 mb-4">
+            <h2 class="text-title-large mb-0">Daftar soal</h2>
             <v-btn
               v-if="!assessment.question_package"
               color="primary"
               prepend-icon="mdi-upload"
               @click="router.push(`/admin/assessments/${assessment.id}/questions`)"
             >
-              Upload questions (Excel)
+              Unggah soal (Excel)
             </v-btn>
           </div>
 
-          <div v-if="!assessment.question_package" class="text-center text-medium-emphasis py-8">
-            <v-icon icon="mdi-file-question-outline" size="40" class="mb-2" />
-            <p class="mb-0">No question package yet. Upload one to enable release.</p>
+          <div
+            v-if="!assessment.question_package"
+            class="d-flex flex-column align-center text-center py-10 px-4 border border-dashed rounded-lg"
+          >
+            <v-avatar color="surface-light" size="56" class="mb-4">
+              <v-icon icon="mdi-file-question-outline" color="primary" size="28" />
+            </v-avatar>
+            <p class="text-body-large text-medium-emphasis mb-0 assessment-detail__empty">
+              Belum ada soal. Unggah file Excel berisi soal agar paket soal ini bisa diterbitkan.
+            </p>
           </div>
 
           <div v-else>
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              {{ pkg ? pkg.questions.length : assessment.question_package.question_count }} question(s) ·
-              created {{ formatDate(assessment.question_package.created_at) }}.
-              A released assessment must be unreleased before replacing its package.
+            <p class="text-body-medium mb-1">
+              {{ pkg ? pkg.questions.length : assessment.question_package.question_count }} soal, dibuat
+              {{ formatDate(assessment.question_package.created_at) }}.
+            </p>
+            <p class="d-flex align-start ga-2 text-body-small text-medium-emphasis mb-4">
+              <v-icon icon="mdi-information-outline" size="16" />
+              <span>Paket soal yang sudah terbit harus dibatalkan terbitnya sebelum soalnya diganti.</span>
             </p>
 
-            <v-expansion-panels v-if="pkg" variant="accordion">
+            <v-expansion-panels v-if="pkg" variant="accordion" flat rounded="lg" class="border rounded-lg">
               <v-expansion-panel v-for="q in pkg.questions" :key="q.id">
                 <v-expansion-panel-title>
-                  <div class="d-flex align-center ga-3">
-                    <v-chip size="x-small" label>{{ q.question_number }}</v-chip>
+                  <div class="d-flex align-center ga-3 assessment-detail__summary">
+                    <span class="app-bubble">{{ q.question_number }}</span>
                     <StatusChip :value="q.question_type" />
-                    <span class="text-truncate" style="max-width: 420px">{{ q.question_text }}</span>
+                    <span class="text-truncate text-body-medium assessment-detail__summary-text">{{ q.question_text }}</span>
                   </div>
                 </v-expansion-panel-title>
                 <v-expansion-panel-text>
-                  <div class="d-flex justify-end mb-2">
+                  <div class="d-flex flex-wrap align-start justify-space-between ga-3 mb-4">
+                    <p class="app-reading text-pre-wrap mb-0 assessment-detail__stem">{{ q.question_text }}</p>
                     <v-btn
                       size="small"
                       variant="tonal"
+                      color="primary"
                       prepend-icon="mdi-pencil-outline"
                       @click="openQuestionEdit(q)"
                     >
-                      Edit question / explanation
+                      Ubah soal dan pembahasan
                     </v-btn>
                   </div>
 
                   <SignedImage
                     v-if="q.question_image_url"
                     :src="q.question_image_url"
-                    :alt="`Question ${q.question_number} image`"
+                    :alt="`Gambar soal ${q.question_number}`"
+                    class="mb-4"
                     @refresh="reloadPackage"
                   />
-                  <v-list density="compact">
-                    <v-list-item v-for="o in q.options" :key="o.id">
+
+                  <h3 class="text-title-small mb-1">Pilihan jawaban</h3>
+                  <v-list density="compact" class="pa-0 bg-transparent">
+                    <v-list-item v-for="o in q.options" :key="o.id" class="px-0 py-2">
                       <template #prepend>
-                        <v-chip size="x-small" label class="me-2">{{ o.option_code }}</v-chip>
+                        <span class="app-bubble app-bubble--sm me-3">{{ o.option_code }}</span>
                       </template>
-                      <v-list-item-title class="text-body-2">
+                      <v-list-item-title class="text-body-medium text-wrap">
                         {{ o.option_text }}
                       </v-list-item-title>
-                      <v-list-item-media v-if="o.option_image_url">
+                      <v-list-item-media v-if="o.option_image_url" class="mt-2">
                         <SignedImage
                           v-if="o.option_image_url"
                           :src="o.option_image_url"
-                          :alt="`Option ${o.option_code} image`"
+                          :alt="`Gambar pilihan jawaban ${o.option_code}`"
                           @refresh="reloadPackage"
                         />
                       </v-list-item-media>
                       <template #append>
-                        <div class="d-flex align-center ga-2">
-                          <span class="text-caption text-medium-emphasis">score: {{ o.score }}</span>
-                          <v-btn
-                            size="x-small"
-                            variant="text"
-                            icon="mdi-pencil-outline"
-                            title="Edit option"
-                            @click="openOptionEdit(q, o)"
-                          />
+                        <div class="d-flex align-center ga-1 ms-2">
+                          <span class="text-body-small text-medium-emphasis text-no-wrap">Skor: {{ o.score }}</span>
+                          <v-tooltip text="Ubah pilihan jawaban">
+                            <template #activator="{ props: tip }">
+                              <v-btn
+                                v-bind="tip"
+                                size="small"
+                                variant="text"
+                                icon="mdi-pencil-outline"
+                                :aria-label="`Ubah pilihan jawaban ${o.option_code} soal ${q.question_number}`"
+                                @click="openOptionEdit(q, o)"
+                              />
+                            </template>
+                          </v-tooltip>
                         </div>
                       </template>
                     </v-list-item>
                   </v-list>
-                  <v-alert v-if="q.explanation" type="info" variant="tonal" density="compact" class="mt-3">
-                    {{ q.explanation }}
+
+                  <v-alert
+                    v-if="q.explanation"
+                    type="info"
+                    variant="tonal"
+                    density="compact"
+                    icon="mdi-lightbulb-on-outline"
+                    title="Pembahasan"
+                    class="mt-3"
+                  >
+                    <div class="text-body-medium text-pre-wrap">{{ q.explanation }}</div>
                   </v-alert>
                   <div v-if="q.explanation_file_url" class="mt-2">
                     <SignedImage
                       v-if="q.explanation_file_url"
                       :src="q.explanation_file_url"
-                      :alt="`Explanation ${q.question_number} image`"
+                      :alt="`Gambar pembahasan soal ${q.question_number}`"
                       @refresh="reloadPackage"
                     />
                   </div>
@@ -277,3 +333,19 @@ onMounted(load)
     />
   </div>
 </template>
+
+<style scoped>
+.assessment-detail__empty {
+  max-width: 48ch;
+}
+/* Let the question summary shrink so long stems truncate instead of
+   pushing the expand icon off screen. */
+.assessment-detail__summary,
+.assessment-detail__summary-text {
+  min-width: 0;
+}
+.assessment-detail__stem {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+</style>

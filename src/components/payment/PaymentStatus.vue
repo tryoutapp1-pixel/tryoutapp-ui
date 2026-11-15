@@ -39,46 +39,55 @@ const VISUALS = {
 </script>
 
 <template>
-  <v-card variant="outlined" class="pa-8 text-center">
-    <v-icon
-      :icon="(VISUALS[state] || VISUALS.processing).icon"
+  <v-card class="rounded-xl pa-6 pa-md-10 text-center">
+    <v-avatar
       :color="(VISUALS[state] || VISUALS.processing).color"
-      size="64"
-      class="mb-4"
-    />
-    <h2 class="text-h5 font-weight-bold mb-2">{{ title }}</h2>
-    <p class="text-body-2 text-medium-emphasis mb-6" style="white-space: pre-line">
+      variant="tonal"
+      size="80"
+      class="mb-5"
+    >
+      <v-icon
+        :icon="(VISUALS[state] || VISUALS.processing).icon"
+        :color="(VISUALS[state] || VISUALS.processing).color"
+        size="44"
+      />
+    </v-avatar>
+    <h2 class="text-headline-small mb-2">{{ title }}</h2>
+    <p class="text-body-large text-medium-emphasis mx-auto mb-6 payment-status__message">
       {{ message }}
     </p>
 
     <v-card
       v-if="invoice || transaction"
-      variant="tonal"
-      class="pa-4 text-left mx-auto mb-2"
-      max-width="420"
+      color="surface-light"
+      variant="flat"
+      class="pa-4 text-start mx-auto mb-2"
+      max-width="440"
     >
-      <div v-if="invoice" class="d-flex justify-space-between mb-2">
-        <span class="text-medium-emphasis">Order ID</span>
-        <span class="font-mono text-body-2">{{ invoice.order_id }}</span>
+      <div v-if="invoice" class="d-flex justify-space-between ga-4 py-1">
+        <span class="text-body-medium text-medium-emphasis text-no-wrap">ID pesanan</span>
+        <span class="font-mono text-body-medium text-end text-break">{{ invoice.order_id }}</span>
       </div>
-      <div v-if="invoice" class="d-flex justify-space-between mb-2">
-        <span class="text-medium-emphasis">Amount</span>
-        <span>{{ formatCurrency(invoice.amount, invoice.currency) }}</span>
+      <div v-if="invoice" class="d-flex justify-space-between ga-4 py-1">
+        <span class="text-body-medium text-medium-emphasis">Jumlah</span>
+        <span class="text-title-small text-end payment-status__num">
+          {{ formatCurrency(invoice.amount, invoice.currency) }}
+        </span>
       </div>
-      <div class="d-flex justify-space-between align-center mb-2">
-        <span class="text-medium-emphasis">Payment status</span>
+      <div class="d-flex justify-space-between align-center ga-4 py-1">
+        <span class="text-body-medium text-medium-emphasis">Status pembayaran</span>
         <StatusChip :value="transaction ? transaction.status : invoice ? invoice.status : 'PENDING'" />
       </div>
       <div
         v-if="transaction && transaction.payment_method"
-        class="d-flex justify-space-between mb-2"
+        class="d-flex justify-space-between ga-4 py-1"
       >
-        <span class="text-medium-emphasis">Method</span>
-        <span>{{ transaction.payment_method }}</span>
+        <span class="text-body-medium text-medium-emphasis">Metode</span>
+        <span class="text-body-medium text-end text-break">{{ transaction.payment_method }}</span>
       </div>
-      <div v-if="transaction && transaction.updated_at" class="d-flex justify-space-between">
-        <span class="text-medium-emphasis">Updated</span>
-        <span>{{ formatDate(transaction.updated_at) }}</span>
+      <div v-if="transaction && transaction.updated_at" class="d-flex justify-space-between ga-4 py-1">
+        <span class="text-body-medium text-medium-emphasis">Diperbarui</span>
+        <span class="text-body-medium text-end payment-status__num">{{ formatDate(transaction.updated_at) }}</span>
       </div>
     </v-card>
 
@@ -89,7 +98,16 @@ const VISUALS = {
 </template>
 
 <style scoped>
+.payment-status__message {
+  white-space: pre-line;
+  max-width: 48ch;
+}
+
+.payment-status__num {
+  font-variant-numeric: tabular-nums;
+}
+
 .font-mono {
-  font-family: monospace;
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 }
 </style>

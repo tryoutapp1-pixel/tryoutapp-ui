@@ -20,10 +20,19 @@ const percent = computed(() => (props.total ? Math.round((props.answered / props
 
 <template>
   <div>
-    <div class="d-flex align-center justify-space-between mb-1">
-      <span class="text-caption text-medium-emphasis">Progress</span>
-      <span class="text-caption font-weight-medium">{{ answered }} / {{ total }}</span>
+    <div class="d-flex flex-wrap align-baseline justify-space-between gc-2 mb-2">
+      <span class="text-body-small text-medium-emphasis">Soal terjawab</span>
+      <span class="text-title-small">
+        <span class="app-figure">{{ answered }}</span>
+        <span class="text-medium-emphasis"> dari {{ total }}</span>
+      </span>
     </div>
-    <v-progress-linear :model-value="percent" color="primary" height="8" rounded />
+    <v-progress-linear
+      :model-value="percent"
+      color="primary"
+      height="8"
+      rounded
+      :aria-label="`${answered} dari ${total} soal terjawab`"
+    />
   </div>
 </template>

@@ -45,7 +45,7 @@ function retry() {
 
 const message = computed(
   () =>
-    'Your payment was not completed. No charge was applied for a failed or cancelled payment. You can try again whenever you are ready.'
+    'Tidak ada biaya yang ditagih untuk pembayaran yang gagal atau dibatalkan. Kamu bisa mencoba lagi kapan saja.'
 )
 
 onMounted(load)
@@ -53,27 +53,27 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Payment failed" />
+    <PageHeader title="Status pembayaran" />
 
     <StatePanel :loading="loading" :error="error" @retry="load">
       <v-row justify="center">
-        <v-col cols="12" md="7">
+        <v-col cols="12" md="8" lg="7">
           <PaymentStatus
             state="failed"
-            title="Payment was not completed"
+            title="Pembayaran tidak selesai"
             :message="message"
             :invoice="activeInvoice"
             :transaction="activeTransaction"
           >
             <template #actions>
               <v-btn color="primary" variant="flat" prepend-icon="mdi-refresh" @click="retry">
-                Try again
+                Coba lagi
               </v-btn>
-              <v-btn variant="tonal" :to="{ name: 'user-transactions' }" prepend-icon="mdi-receipt-text-outline">
-                Transactions
+              <v-btn variant="tonal" color="primary" :to="{ name: 'user-transactions' }" prepend-icon="mdi-receipt-text-outline">
+                Lihat transaksi
               </v-btn>
               <v-btn variant="text" :to="{ name: 'user-subscription' }" prepend-icon="mdi-crown-outline">
-                Subscription
+                Lihat langganan
               </v-btn>
             </template>
           </PaymentStatus>

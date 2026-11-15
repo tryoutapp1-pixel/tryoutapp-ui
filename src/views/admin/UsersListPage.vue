@@ -23,28 +23,29 @@ onMounted(() => load(1))
 
 <template>
   <div>
-    <PageHeader title="Users" subtitle="All registered accounts." />
+    <PageHeader title="Pengguna" subtitle="Semua akun yang terdaftar di aplikasi." />
 
     <StatePanel
       :loading="loading"
       :error="error"
       :empty="!loading && !error && items.length === 0"
-      empty-text="No users found."
+      empty-text="Belum ada pengguna yang terdaftar."
+      empty-icon="mdi-account-off-outline"
       @retry="load(pagination.page)"
     >
-      <v-card>
-        <v-table>
+      <v-card variant="flat">
+        <v-table hover>
           <thead>
             <tr>
-              <th>Role</th>
-              <th>Name</th>
+              <th>Peran</th>
+              <th>Nama</th>
               <th>Email</th>
               <th>Status</th>
               <!-- <th>Registered</th> -->
-              <th>Subscription</th>
+              <th>Langganan</th>
               <!-- <th>Start Date</th>
               <th>Expired Date</th> -->
-              <th class="text-right">Actions</th>
+              <th class="text-right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -52,18 +53,25 @@ onMounted(() => load(1))
               <td><StatusChip :value="u.role" /></td>
               <td class="font-weight-medium">{{ u.name }}</td>
               <td>{{ u.email }}</td>
-              <td><StatusChip :value="u.status" /></td>
+              <td class="text-no-wrap"><StatusChip :value="u.status" /></td>
               <!-- <td>{{ formatDate(u.created_at) }}</td> -->
               <td><StatusChip :value="u.subscription_status" /></td>
               <!-- <td>{{ formatDate(u.subscription_started_at) }}</td>
               <td>{{ formatDate(u.subscription_expired_at) }}</td> -->
               <td class="text-right">
-                <v-btn
-                  size="small"
-                  variant="text"
-                  icon="mdi-eye-outline"
-                  @click="router.push(`/admin/users/${u.id}`)"
-                />
+                <v-tooltip text="Lihat detail">
+                  <template #activator="{ props: tip }">
+                    <v-btn
+                      v-bind="tip"
+                      size="small"
+                      variant="text"
+                      color="primary"
+                      icon="mdi-eye-outline"
+                      :aria-label="`Lihat detail ${u.name}`"
+                      @click="router.push(`/admin/users/${u.id}`)"
+                    />
+                  </template>
+                </v-tooltip>
               </td>
             </tr>
           </tbody>

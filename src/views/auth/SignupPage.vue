@@ -47,64 +47,118 @@ const onSubmit = handleSubmit(async (values) => {
 </script>
 
 <template>
-  <v-container class="py-12" style="max-width: 460px">
-    <v-card class="pa-6">
-      <template v-if="done">
-        <div class="text-center">
-          <v-icon icon="mdi-email-check-outline" color="success" size="48" class="mb-3" />
-          <h1 class="text-h5 font-weight-bold mb-2">Check your email</h1>
-          <p class="text-body-2 text-medium-emphasis mb-6">
-            We sent a verification link to <strong>{{ submittedEmail }}</strong>.
-            Verify your account, then log in.
-          </p>
-          <v-btn to="/login" color="primary" variant="flat" block>Go to login</v-btn>
-          <v-btn to="/verify-email" variant="text" block class="mt-2">Resend verification</v-btn>
-        </div>
-      </template>
+  <div class="app-content px-4 pt-6 pt-md-16 pb-12 pb-md-16">
+    <v-row justify="center" align="center">
+      <!-- What a new account opens; only features that exist. Desktop only. -->
+      <v-col cols="12" md="6" lg="5" class="d-none d-md-block pe-md-12">
+        <p class="text-headline-large mb-8 auth-aside__title">Belajar dan berlatih dari satu akun.</p>
+        <ul class="auth-aside__list">
+          <li class="d-flex align-center ga-4">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-book-open-page-variant-outline" color="primary" />
+            </v-avatar>
+            <span class="text-body-large">Baca Materi lalu kerjakan Latihan untuk tiap topik</span>
+          </li>
+          <li class="d-flex align-center ga-4">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-timer-outline" color="primary" />
+            </v-avatar>
+            <span class="text-body-large">Uji kesiapanmu dengan Try Out berwaktu</span>
+          </li>
+          <li class="d-flex align-center ga-4">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-chart-line" color="primary" />
+            </v-avatar>
+            <span class="text-body-large">Pantau skor Try Out di Progres Saya dengan Premium</span>
+          </li>
+        </ul>
+      </v-col>
 
-      <template v-else>
-        <h1 class="text-h5 font-weight-bold mb-1">Create your account</h1>
-        <p class="text-body-2 text-medium-emphasis mb-6">Start practicing in minutes.</p>
+      <v-col cols="12" md="6" lg="5">
+        <v-card class="auth-card rounded-xl pa-6 pa-sm-10 mx-auto">
+          <template v-if="done">
+            <div class="text-center">
+              <v-avatar color="success" variant="tonal" size="64" class="mb-5">
+                <v-icon icon="mdi-email-check-outline" size="32" />
+              </v-avatar>
+              <h1 class="text-headline-medium mb-2">Cek email kamu</h1>
+              <p class="text-body-large text-medium-emphasis mb-8 auth-break">
+                Kami sudah mengirim tautan verifikasi ke <strong>{{ submittedEmail }}</strong>.
+                Verifikasi akunmu, lalu masuk.
+              </p>
+              <v-btn to="/login" color="primary" variant="flat" size="large" block>Ke halaman masuk</v-btn>
+              <v-btn to="/verify-email" variant="text" color="primary" block class="mt-3">Kirim ulang email verifikasi</v-btn>
+            </div>
+          </template>
 
-        <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
-          {{ formError }}
-        </v-alert>
+          <template v-else>
+            <h1 class="text-headline-medium mb-2">Daftar</h1>
+            <p class="text-body-large text-medium-emphasis mb-8">Buat akun Gratis dan mulai berlatih.</p>
 
-        <form novalidate @submit.prevent="onSubmit">
-          <AppTextField
-            name="name"
-            label="Name"
-            autocomplete="name"
-            :rules="compose(required('Name'), maxLength(100, 'Name'))"
-            :server-error="fieldErrors.name"
-          />
-          <AppTextField
-            name="email"
-            label="Email"
-            type="email"
-            autocomplete="email"
-            :rules="compose(required('Email'), emailRule)"
-            :server-error="fieldErrors.email"
-          />
-          <AppPasswordField
-            name="password"
-            label="Password"
-            autocomplete="new-password"
-            :rules="compose(required('Password'), passwordRule)"
-            :server-error="fieldErrors.password"
-          />
+            <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-6">
+              {{ formError }}
+            </v-alert>
 
-          <v-btn type="submit" color="primary" size="large" block :loading="submitting" class="mt-2">
-            Sign up
-          </v-btn>
-        </form>
+            <form novalidate @submit.prevent="onSubmit">
+              <AppTextField
+                name="name"
+                label="Nama"
+                autocomplete="name"
+                :rules="compose(required('Name'), maxLength(100, 'Name'))"
+                :server-error="fieldErrors.name"
+              />
+              <AppTextField
+                name="email"
+                label="Email"
+                type="email"
+                autocomplete="email"
+                :rules="compose(required('Email'), emailRule)"
+                :server-error="fieldErrors.email"
+              />
+              <AppPasswordField
+                name="password"
+                label="Kata sandi"
+                autocomplete="new-password"
+                :rules="compose(required('Password'), passwordRule)"
+                :server-error="fieldErrors.password"
+              />
 
-        <v-divider class="my-5" />
-        <p class="text-body-2 text-center mb-0">
-          Already have an account?
-          <RouterLink to="/login" class="text-primary text-decoration-none">Log in</RouterLink>
-        </p>
-      </template>
-    </v-card>
-  </v-container>
+              <v-btn type="submit" color="primary" size="large" block :loading="submitting" class="mt-2">
+                Buat akun
+              </v-btn>
+            </form>
+
+            <p class="text-body-medium text-medium-emphasis text-center mt-8 mb-0">
+              Sudah punya akun?
+              <RouterLink to="/login" class="app-link">Masuk</RouterLink>
+            </p>
+          </template>
+        </v-card>
+      </v-col>
+    </v-row>
+  </div>
 </template>
+
+<style scoped>
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+}
+
+.auth-break {
+  overflow-wrap: anywhere;
+}
+
+.auth-aside__title {
+  max-width: 18ch;
+}
+
+.auth-aside__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 20px;
+  max-width: 40ch;
+}
+</style>

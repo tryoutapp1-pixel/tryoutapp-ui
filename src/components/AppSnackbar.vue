@@ -16,7 +16,7 @@ const { snackbar } = storeToRefs(uiStore)
   >
     {{ snackbar.message }}
     <template #actions>
-      <v-btn variant="text" @click="uiStore.dismiss()">Close</v-btn>
+      <v-btn variant="text" @click="uiStore.dismiss()">Tutup</v-btn>
     </template>
   </v-snackbar>
 </template>

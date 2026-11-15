@@ -110,13 +110,13 @@ async function submitFeedback(payload) {
     await userService.submitFeedback(assessmentId.value, payload)
     store.isFeedback = true
     feedbackOpen.value = false
-    uiStore.success('Thanks for your feedback.')
+    uiStore.success('Terima kasih atas masukanmu.')
     goToExplanations()
   } catch (e) {
     if (e && e.status === 409) {
       store.isFeedback = true
       feedbackOpen.value = false
-      uiStore.notify('You have already sent feedback for this assessment.', 'info')
+      uiStore.notify('Kamu sudah pernah mengirim masukan untuk paket soal ini.', 'info')
       goToExplanations()
     } else {
       uiStore.error(e.message)
@@ -133,7 +133,7 @@ async function onSelect(optionId) {
   try {
     await store.selectAnswer(question.id, optionId)
   } catch {
-    uiStore.error('Could not save your answer. Select Retry on the question to try again.')
+    uiStore.error('Jawaban belum tersimpan. Pilih Coba lagi pada soal untuk menyimpannya ulang.')
   }
 }
 
@@ -143,7 +143,7 @@ async function onRetry() {
   try {
     await store.retrySave(question.id)
   } catch {
-    uiStore.error('Still could not save. Check your connection and retry.')
+    uiStore.error('Jawaban masih belum tersimpan. Periksa koneksi internetmu, lalu coba lagi.')
   }
 }
 
@@ -165,7 +165,7 @@ async function doSubmit() {
     const data = await store.submit()
     submitted.value = true
     timeUpOpen.value = false
-    uiStore.success('Your attempt was submitted.')
+    uiStore.success('Jawabanmu sudah dikumpulkan.')
     if (data && data.is_feedback === false) {
       // Feedback is required before moving on to the answer review.
       feedbackOpen.value = true
@@ -193,16 +193,17 @@ function onExpired() {
 
 const confirmMessage = computed(() => {
   const missing = unansweredNumbers.value
-  if (missing.length === 0) return 'Submit your attempt? You cannot change your answers afterwards.'
-  const noun = missing.length === 1 ? 'question' : 'questions'
-  return `You have ${missing.length} unanswered ${noun} (${missing.join(', ')}). Unanswered questions score 0. Submit anyway?`
+  if (missing.length === 0) return 'Kumpulkan jawaban sekarang? Jawaban tidak bisa diubah setelah dikumpulkan.'
+  // Indonesian does not inflect "soal" for number; both branches read the same.
+  const noun = missing.length === 1 ? 'soal' : 'soal'
+  return `Masih ada ${missing.length} ${noun} yang belum dijawab (nomor ${missing.join(', ')}). Soal yang tidak dijawab bernilai 0. Tetap kumpulkan jawaban?`
 })
 
 // Warn before leaving an in-progress attempt. Answers are saved, but the
 // learner may not intend to leave.
 onBeforeRouteLeave(() => {
   if (!submitted.value && status.value === 'IN_PROGRESS') {
-    return window.confirm('Leave this attempt? Your saved answers are kept and you can continue later.')
+    return window.confirm('Tinggalkan pengerjaan ini? Jawaban yang sudah tersimpan tetap aman dan kamu bisa melanjutkannya nanti.')
   }
   return true
 })
@@ -214,101 +215,109 @@ onMounted(load)
 <template>
   <div>
     <StatePanel :loading="loading" :error="error" @retry="load">
-      <div v-if="status === 'IN_PROGRESS'">
-        <div class="d-flex align-center justify-space-between flex-wrap ga-3 mb-4">
-          <div>
-            <h1 class="text-h6 font-weight-bold mb-0">
-              {{ kind === 'tryout' ? 'Try Out' : 'Latihan' }}
-            </h1>
-            <span class="text-caption text-medium-emphasis">Attempt #{{ attemptId }}</span>
-          </div>
-          <AttemptTimer v-if="timed" :remaining="remaining" @expired="onExpired" />
+      <!-- Layout: below 960px everything stacks (head, timer/progress, question,
+           navigator, submit) and the Try Out timer card sticks under the app
+           bar. From 960px the side panel becomes a sticky right column. -->
+      <div v-if="status === 'IN_PROGRESS'" class="attempt-layout">
+        <div class="attempt-head">
+          <h1 class="text-headline-small mb-1">
+            {{ kind === 'tryout' ? 'Try Out' : 'Latihan' }}
+          </h1>
+          <span class="text-body-small text-medium-emphasis">Pengerjaan #{{ attemptId }}</span>
         </div>
 
-        <v-row>
-          <v-col cols="12" md="8">
-            <QuestionCard
-              v-if="activeQuestion"
-              :question="activeQuestion"
-              :selected-option-id="answers[activeQuestion.id] || null"
-              :save-status="saveStatus[activeQuestion.id] || 'idle'"
-              :disabled="answeringLocked"
-              @select="onSelect"
-              @retry="onRetry"
-              @refresh="onRefreshImages"
-            />
+        <div class="attempt-main">
+          <QuestionCard
+            v-if="activeQuestion"
+            :question="activeQuestion"
+            :selected-option-id="answers[activeQuestion.id] || null"
+            :save-status="saveStatus[activeQuestion.id] || 'idle'"
+            :disabled="answeringLocked"
+            @select="onSelect"
+            @retry="onRetry"
+            @refresh="onRefreshImages"
+          />
 
-            <div class="d-flex justify-space-between mt-4">
-              <v-btn
-                variant="tonal"
-                prepend-icon="mdi-chevron-left"
-                :disabled="activeIndex === 0"
-                @click="store.prev()"
-              >
-                Previous
-              </v-btn>
-              <v-btn
-                v-if="activeIndex < totalQuestions - 1"
-                variant="tonal"
-                append-icon="mdi-chevron-right"
-                @click="store.next()"
-              >
-                Next
-              </v-btn>
-              <v-btn
-                v-else
-                color="primary"
-                variant="flat"
-                prepend-icon="mdi-check"
-                :loading="submitting"
-                @click="askSubmit"
-              >
-                Submit
-              </v-btn>
-            </div>
-          </v-col>
-
-          <v-col cols="12" md="4">
-            <v-card variant="outlined" class="pa-4 mb-4">
-              <AttemptProgress :answered="answeredCount" :total="totalQuestions" />
-            </v-card>
-
-            <QuestionNavigator
-              :questions="questions"
-              :answers="answers"
-              :active-index="activeIndex"
-              class="mb-4"
-              @navigate="store.goTo($event)"
-            />
-
+          <div class="d-flex justify-space-between flex-wrap ga-3 mt-4">
             <v-btn
+              variant="tonal"
+              color="primary"
+              prepend-icon="mdi-chevron-left"
+              :disabled="activeIndex === 0"
+              @click="store.prev()"
+            >
+              Sebelumnya
+            </v-btn>
+            <v-btn
+              v-if="activeIndex < totalQuestions - 1"
+              variant="tonal"
+              color="primary"
+              append-icon="mdi-chevron-right"
+              @click="store.next()"
+            >
+              Berikutnya
+            </v-btn>
+            <v-btn
+              v-else
               color="primary"
               variant="flat"
-              block
-              size="large"
-              prepend-icon="mdi-check-circle-outline"
+              prepend-icon="mdi-check"
               :loading="submitting"
               @click="askSubmit"
             >
-              Submit attempt
+              Kumpulkan jawaban
             </v-btn>
-          </v-col>
-        </v-row>
+          </div>
+        </div>
+
+        <div class="attempt-aside">
+          <v-card class="attempt-status pa-4 pa-md-5" :class="{ 'attempt-status--sticky': timed }">
+            <div class="d-flex flex-wrap align-center ga-4">
+              <AttemptTimer v-if="timed" class="attempt-status__timer" :remaining="remaining" @expired="onExpired" />
+              <div class="attempt-status__progress">
+                <AttemptProgress :answered="answeredCount" :total="totalQuestions" />
+              </div>
+            </div>
+          </v-card>
+
+          <QuestionNavigator
+            :questions="questions"
+            :answers="answers"
+            :active-index="activeIndex"
+            class="attempt-nav"
+            @navigate="store.goTo($event)"
+          />
+
+          <v-btn
+            color="primary"
+            variant="flat"
+            block
+            size="large"
+            prepend-icon="mdi-check-circle-outline"
+            class="attempt-submit"
+            :loading="submitting"
+            @click="askSubmit"
+          >
+            Kumpulkan jawaban
+          </v-btn>
+        </div>
       </div>
-      <v-card v-else-if="feedbackOpen" variant="outlined" class="pa-8 text-center">
-        <v-icon icon="mdi-check-circle-outline" color="success" size="48" class="mb-3" />
-        <div class="text-h6 font-weight-bold">Attempt submitted</div>
-        <p class="text-body-2 text-medium-emphasis mb-0">
-          Share your feedback to continue to the answer review.
+      <v-card v-else-if="feedbackOpen" class="pa-8 text-center rounded-xl">
+        <v-avatar color="success" variant="tonal" size="64" class="mb-4">
+          <v-icon icon="mdi-check-circle-outline" size="32" />
+        </v-avatar>
+        <h1 class="text-title-large mb-2">Jawaban sudah dikumpulkan</h1>
+        <p class="text-body-medium text-medium-emphasis mb-0">
+          Isi masukan singkat untuk lanjut ke pembahasan.
         </p>
       </v-card>
     </StatePanel>
 
     <ConfirmDialog
       v-model="confirmOpen"
-      title="Submit attempt"
+      title="Kumpulkan jawaban?"
       :message="confirmMessage"
-      confirm-text="Submit"
+      confirm-text="Kumpulkan jawaban"
       confirm-color="primary"
       :loading="submitting"
       @confirm="doSubmit"
@@ -326,3 +335,73 @@ onMounted(load)
     <FeedbackDialog :model-value="feedbackOpen" :submitting="feedbackSubmitting" @submit="submitFeedback" />
   </div>
 </template>
+
+<style scoped>
+.attempt-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.attempt-status__timer {
+  flex: 1 1 auto;
+}
+
+.attempt-status__progress {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+/* Stacked: the side panel dissolves so its parts can be ordered around the
+   question. */
+@media (max-width: 959.98px) {
+  .attempt-aside {
+    display: contents;
+  }
+  .attempt-head { order: 0; }
+  .attempt-status { order: 1; }
+  .attempt-main { order: 2; }
+  .attempt-nav { order: 3; }
+  .attempt-submit { order: 4; }
+
+  /* Try Out: keep the timer in view under the 64px app bar. */
+  .attempt-status--sticky {
+    position: sticky;
+    top: 72px;
+    z-index: 2;
+  }
+}
+
+/* Two columns: question on the left, sticky panel on the right. The panel
+   scrolls on its own when a long navigator does not fit the viewport. */
+@media (min-width: 960px) {
+  .attempt-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-rows: auto 1fr;
+    column-gap: 32px;
+    align-items: start;
+  }
+  .attempt-head {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .attempt-main {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .attempt-aside {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 88px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+    /* Room for focus rings and card shadows inside the scroll box. */
+    padding: 6px;
+    margin: -6px;
+  }
+}
+</style>

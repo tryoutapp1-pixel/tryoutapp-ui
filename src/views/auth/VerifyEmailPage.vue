@@ -28,7 +28,7 @@ async function verify() {
   try {
     const res = await authService.verifyEmail(token.value)
     status.value = 'success'
-    message.value = (res && res.message) || 'Your email has been verified. You can now log in.'
+    message.value = (res && res.message) || 'Email kamu sudah terverifikasi. Sekarang kamu bisa masuk.'
   } catch (error) {
     // Backend returns 400 for invalid / already-used / expired tokens.
     status.value = 'failed'
@@ -55,7 +55,7 @@ const onResend = handleSubmit(async (values) => {
   try {
     const res = await authService.resendVerification(values.email)
     // Enumeration-safe generic message from the backend.
-    resendMessage.value = (res && res.message) || 'If the account is pending verification, a new email has been sent.'
+    resendMessage.value = (res && res.message) || 'Jika akun ini masih menunggu verifikasi, email verifikasi baru sudah dikirim.'
   } catch (error) {
     resendMessage.value = error.message
   } finally {
@@ -65,36 +65,40 @@ const onResend = handleSubmit(async (values) => {
 </script>
 
 <template>
-  <v-container class="py-12" style="max-width: 460px">
-    <v-card class="pa-6">
-      <div v-if="status === 'verifying'" class="text-center py-6">
-        <v-progress-circular indeterminate color="primary" size="40" class="mb-3" />
-        <p class="text-body-1 mb-0">Verifying your email...</p>
+  <div class="app-content px-4 pt-6 pt-md-16 pb-12 pb-md-16">
+    <v-card class="auth-card rounded-xl pa-6 pa-sm-10 mx-auto">
+      <div v-if="status === 'verifying'" class="text-center py-8" role="status" aria-live="polite">
+        <v-progress-circular indeterminate color="primary" size="40" width="3" class="mb-4" />
+        <p class="text-body-large text-medium-emphasis mb-0">Memverifikasi email kamu...</p>
       </div>
 
       <div v-else-if="status === 'success'" class="text-center">
-        <v-icon icon="mdi-check-circle-outline" color="success" size="48" class="mb-3" />
-        <h1 class="text-h5 font-weight-bold mb-2">Email verified</h1>
-        <p class="text-body-2 text-medium-emphasis mb-6">{{ message }}</p>
-        <v-btn to="/login" color="primary" variant="flat" block>Continue to login</v-btn>
+        <v-avatar color="success" variant="tonal" size="64" class="mb-5">
+          <v-icon icon="mdi-check-circle-outline" size="32" />
+        </v-avatar>
+        <h1 class="text-headline-medium mb-2">Email terverifikasi</h1>
+        <p class="text-body-large text-medium-emphasis mb-8">{{ message }}</p>
+        <v-btn to="/login" color="primary" variant="flat" size="large" block>Masuk sekarang</v-btn>
       </div>
 
       <div v-else>
         <template v-if="status === 'failed'">
-          <div class="text-center mb-6">
-            <v-icon icon="mdi-alert-circle-outline" color="error" size="48" class="mb-3" />
-            <h1 class="text-h5 font-weight-bold mb-2">Verification failed</h1>
-            <p class="text-body-2 text-medium-emphasis mb-0">{{ message }}</p>
+          <div class="text-center mb-8">
+            <v-avatar color="error" variant="tonal" size="64" class="mb-5">
+              <v-icon icon="mdi-alert-circle-outline" size="32" />
+            </v-avatar>
+            <h1 class="text-headline-medium mb-2">Verifikasi gagal</h1>
+            <p class="text-body-large text-medium-emphasis mb-0">{{ message }}</p>
           </div>
         </template>
         <template v-else>
-          <h1 class="text-h5 font-weight-bold mb-1">Resend verification</h1>
-          <p class="text-body-2 text-medium-emphasis mb-6">
-            Enter your email to receive a new verification link.
+          <h1 class="text-headline-medium mb-2">Kirim ulang verifikasi</h1>
+          <p class="text-body-large text-medium-emphasis mb-8">
+            Masukkan email kamu untuk menerima tautan verifikasi baru.
           </p>
         </template>
 
-        <v-alert v-if="resendMessage" type="info" variant="tonal" density="comfortable" class="mb-4">
+        <v-alert v-if="resendMessage" type="info" variant="tonal" density="comfortable" class="mb-6">
           {{ resendMessage }}
         </v-alert>
 
@@ -106,16 +110,22 @@ const onResend = handleSubmit(async (values) => {
             autocomplete="email"
             :rules="compose(required('Email'), emailRule)"
           />
-          <v-btn type="submit" color="primary" size="large" block :loading="resending">
-            Resend verification email
+          <v-btn type="submit" color="primary" size="large" block :loading="resending" class="mt-2">
+            Kirim ulang email verifikasi
           </v-btn>
         </form>
 
-        <v-divider class="my-5" />
-        <p class="text-body-2 text-center mb-0">
-          <RouterLink to="/login" class="text-primary text-decoration-none">Back to login</RouterLink>
+        <p class="text-body-medium text-center mt-8 mb-0">
+          <RouterLink to="/login" class="app-link">Kembali ke halaman masuk</RouterLink>
         </p>
       </div>
     </v-card>
-  </v-container>
+  </div>
 </template>
+
+<style scoped>
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+}
+</style>

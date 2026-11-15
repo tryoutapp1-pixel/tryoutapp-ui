@@ -33,7 +33,7 @@ const headers = [
   { title: 'TKP', key: 'tkp_score', sortable: true, align: 'end' },
   { title: 'Total', key: 'total_score', sortable: true, align: 'end' },
   {
-    title: 'Completed',
+    title: 'Selesai',
     key: 'completed_at',
     sortable: true,
     /** @param {string} a @param {string} b */
@@ -59,10 +59,10 @@ const summary = computed(() => {
 })
 
 const summaryCards = computed(() => [
-  { label: 'Attempts', value: summary.value?.count, color: undefined },
-  { label: 'Best total', value: summary.value?.best, color: 'success' },
-  { label: 'Latest total', value: summary.value?.latest, color: 'primary' },
-  { label: 'Average total', value: summary.value?.average, color: undefined }
+  { label: 'Pengerjaan', value: summary.value?.count, color: undefined },
+  { label: 'Skor total terbaik', value: summary.value?.best, color: 'success' },
+  { label: 'Skor total terakhir', value: summary.value?.latest, color: 'primary' },
+  { label: 'Rata-rata skor total', value: summary.value?.average, color: undefined }
 ])
 
 function goToSubscription() {
@@ -96,16 +96,18 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="My Progress" subtitle="Your Try Out score history." />
+    <PageHeader title="Progres Saya" subtitle="Riwayat skor Try Out kamu." />
 
-    <v-card v-if="locked" variant="outlined" class="pa-8 text-center mx-auto" max-width="560">
-      <v-icon icon="mdi-crown-outline" color="amber-darken-2" size="48" class="mb-3" />
-      <h2 class="text-h6 font-weight-bold mb-2">My Progress is a Premium feature</h2>
-      <p class="text-body-2 text-medium-emphasis mb-4">
-        Premium tracks every Try Out you finish and shows how your TWK, TIU, and TKP scores change over time.
+    <v-card v-if="locked" class="rounded-xl pa-6 pa-md-10 text-center mx-auto" max-width="560">
+      <v-avatar color="premium" size="64" class="mb-5">
+        <v-icon icon="mdi-crown-outline" color="navy" size="32" />
+      </v-avatar>
+      <h2 class="text-title-large mb-2">Progres Saya khusus Premium</h2>
+      <p class="text-body-medium text-medium-emphasis mx-auto mb-6 stats-locked__text">
+        Premium mencatat setiap Try Out yang kamu selesaikan dan menunjukkan perubahan skor TWK, TIU, dan TKP dari waktu ke waktu.
       </p>
       <v-btn color="primary" variant="flat" prepend-icon="mdi-crown" @click="goToSubscription">
-        Go to Subscription
+        Lihat paket Premium
       </v-btn>
     </v-card>
 
@@ -114,25 +116,27 @@ onMounted(load)
       :loading="loading"
       :error="error"
       :empty="!loading && !error && rows.length === 0"
-      empty-text="Complete a Try Out to start tracking your progress."
+      empty-text="Selesaikan satu Try Out untuk mulai memantau progresmu."
       empty-icon="mdi-chart-line"
       @retry="load"
     >
       <v-row class="mb-2">
-        <v-col v-for="card in summaryCards" :key="card.label" cols="6" sm="3">
-          <v-card variant="tonal" :color="card.color" class="pa-4 text-center">
-            <div class="text-caption text-medium-emphasis">{{ card.label }}</div>
-            <div class="text-h5 font-weight-bold">{{ card.value }}</div>
-          </v-card>
+        <v-col v-for="card in summaryCards" :key="card.label" cols="6" md="3">
+          <div class="stats-tile h-100">
+            <v-card variant="text" :color="card.color" class="pa-4 pa-md-5 h-100">
+              <div class="text-body-medium text-medium-emphasis">{{ card.label }}</div>
+              <div class="app-figure text-headline-large mt-3">{{ card.value }}</div>
+            </v-card>
+          </div>
         </v-col>
       </v-row>
 
-      <v-card variant="outlined" class="pa-5 mb-4">
-        <h3 class="text-subtitle-1 font-weight-bold mb-3">Total score trend</h3>
+      <v-card class="pa-5 pa-md-6 mb-4">
+        <h3 class="text-title-medium mb-4">Tren skor total</h3>
         <ScoreTrendChart :points="points" />
       </v-card>
 
-      <v-card variant="outlined">
+      <v-card variant="flat" class="overflow-hidden stats-table">
         <v-data-table
           v-model:sort-by="sortBy"
           :headers="headers"
@@ -147,7 +151,26 @@ onMounted(load)
           </template>
         </v-data-table>
       </v-card>
-      <p class="text-caption text-medium-emphasis mt-2">Select a column header to sort ascending or descending.</p>
+      <p class="text-body-small text-medium-emphasis mt-2">Pilih judul kolom untuk mengurutkan naik atau turun.</p>
     </StatePanel>
   </div>
 </template>
+
+<style scoped>
+.stats-locked__text {
+  max-width: 44ch;
+}
+
+/* White tile around each summary figure; the inner text-variant card only
+   tints the number. */
+.stats-tile {
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgb(var(--app-line));
+  border-radius: var(--app-r-card);
+  box-shadow: var(--app-shadow-card);
+}
+
+.stats-table :deep(td) {
+  font-variant-numeric: tabular-nums;
+}
+</style>

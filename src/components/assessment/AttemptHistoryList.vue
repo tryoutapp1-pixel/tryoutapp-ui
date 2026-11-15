@@ -36,9 +36,9 @@ const emit = defineEmits(['retry', 'review', 'continue'])
     :loading="props.loading"
     :error="props.error"
     :empty="!props.loading && !props.error && props.items.length === 0"
-    empty-text="You have not finished this assessment yet."
+    empty-text="Kamu belum menyelesaikan paket soal ini. Kerjakan sampai selesai, lalu skormu akan muncul di sini."
     empty-icon="mdi-history"
-    loading-text="Loading your attempts..."
+    loading-text="Memuat riwayat pengerjaanmu..."
     @retry="emit('retry')"
   >
     <div class="d-flex flex-column ga-3">

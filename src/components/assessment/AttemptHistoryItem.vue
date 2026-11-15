@@ -51,27 +51,27 @@ function passed(key) {
 </script>
 
 <template>
-  <v-card variant="outlined" class="pa-4">
+  <v-card class="pa-4 pa-md-5">
     <div class="d-flex align-center justify-space-between flex-wrap ga-3">
       <div class="d-flex align-center ga-3">
-        <v-avatar color="primary" variant="tonal" size="40">
-          <span class="font-weight-bold">{{ index }}</span>
+        <v-avatar color="surface-light" rounded="lg" size="44">
+          <span class="app-figure text-title-medium text-primary">{{ index }}</span>
         </v-avatar>
         <div>
-          <div class="d-flex align-center ga-2">
-            <span class="text-subtitle-2 font-weight-bold">Attempt {{ index }}</span>
+          <div class="d-flex flex-wrap align-center ga-2">
+            <span class="text-title-small">Pengerjaan {{ index }}</span>
             <StatusChip :value="attempt.status" />
           </div>
-          <div class="text-caption text-medium-emphasis">
-            {{ attempt.completed_at ? formatDate(attempt.completed_at) : 'In progress' }}
+          <div class="text-body-small text-medium-emphasis">
+            {{ attempt.completed_at ? formatDate(attempt.completed_at) : 'Sedang berlangsung' }}
           </div>
         </div>
       </div>
 
-      <div class="d-flex align-center ga-4">
-        <div v-if="attempt.status !== 'IN_PROGRESS'" class="text-center">
-          <div class="text-caption text-medium-emphasis">Total score</div>
-          <div class="text-h6 font-weight-bold text-primary">{{ attempt.total_score }}</div>
+      <div class="d-flex align-center ga-4 ms-auto">
+        <div v-if="attempt.status !== 'IN_PROGRESS'" class="text-end">
+          <div class="text-body-small text-medium-emphasis">Skor total</div>
+          <div class="app-figure text-headline-small text-primary">{{ attempt.total_score }}</div>
         </div>
         <v-btn
           v-if="attempt.status === 'IN_PROGRESS'"
@@ -80,7 +80,7 @@ function passed(key) {
           prepend-icon="mdi-play"
           @click="$emit('continue', attempt)"
         >
-          Continue
+          Lanjutkan
         </v-btn>
         <v-btn
           v-else
@@ -89,7 +89,7 @@ function passed(key) {
           prepend-icon="mdi-book-open-variant"
           @click="$emit('review', attempt)"
         >
-          Review answers
+          Lihat jawaban
         </v-btn>
       </div>
     </div>
@@ -97,28 +97,32 @@ function passed(key) {
     <template v-if="attempt.status !== 'IN_PROGRESS'">
       <v-row class="mt-3" dense>
         <v-col v-for="c in categories" :key="c.key" cols="4">
-          <v-card variant="tonal" :color="passed(c.key) ? 'success' : 'error'" class="pa-2 text-center">
-            <div class="text-caption">{{ c.label }}</div>
-            <div class="text-subtitle-1 font-weight-bold">{{ attempt[`${c.key}_score`] }}</div>
-            <v-chip size="x-small" variant="flat">
-              {{ passed(c.key) ? 'Passed' : 'Not passed' }}
-            </v-chip>
-          </v-card>
+          <div class="border rounded-lg pa-2 pa-sm-3 h-100">
+            <div class="text-label-medium text-medium-emphasis">{{ c.label }}</div>
+            <div class="app-figure text-title-large my-1">{{ attempt[`${c.key}_score`] }}</div>
+            <div
+              class="d-flex align-center ga-1 text-body-small font-weight-bold"
+              :class="passed(c.key) ? 'text-success' : 'text-error'"
+            >
+              <v-icon :icon="passed(c.key) ? 'mdi-check-circle' : 'mdi-close-circle'" size="14" />
+              {{ passed(c.key) ? 'Lulus' : 'Belum lulus' }}
+            </div>
+          </div>
         </v-col>
       </v-row>
 
-      <v-row class="text-center mt-1" dense no-gutters>
+      <v-row class="mt-2" dense no-gutters>
         <v-col cols="4">
-          <div class="font-weight-bold text-success">{{ attempt.total_correct }}</div>
-          <div class="text-caption text-medium-emphasis">Correct</div>
+          <div class="app-figure text-title-medium text-success">{{ attempt.total_correct }}</div>
+          <div class="text-body-small text-medium-emphasis">Benar</div>
         </v-col>
         <v-col cols="4">
-          <div class="font-weight-bold text-error">{{ attempt.total_wrong }}</div>
-          <div class="text-caption text-medium-emphasis">Wrong</div>
+          <div class="app-figure text-title-medium text-error">{{ attempt.total_wrong }}</div>
+          <div class="text-body-small text-medium-emphasis">Salah</div>
         </v-col>
         <v-col cols="4">
-          <div class="font-weight-bold text-medium-emphasis">{{ attempt.total_unanswered }}</div>
-          <div class="text-caption text-medium-emphasis">Unanswered</div>
+          <div class="app-figure text-title-medium text-medium-emphasis">{{ attempt.total_unanswered }}</div>
+          <div class="text-body-small text-medium-emphasis">Tidak dijawab</div>
         </v-col>
       </v-row>
     </template>

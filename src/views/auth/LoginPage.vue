@@ -41,7 +41,7 @@ const onSubmit = handleSubmit(async (values) => {
   submitting.value = true
   try {
     const user = await authStore.login({ email: values.email, password: values.password })
-    uiStore.success('Welcome back!')
+    uiStore.success('Selamat datang kembali!')
     const redirect = safeRedirect(route.query.redirect)
     router.replace(redirect || (user.role === 'ADMIN' ? '/admin' : '/app'))
   } catch (error) {
@@ -53,47 +53,95 @@ const onSubmit = handleSubmit(async (values) => {
 </script>
 
 <template>
-  <v-container class="py-12" style="max-width: 460px">
-    <v-card class="pa-6">
-      <h1 class="text-h5 font-weight-bold mb-1">Log in</h1>
-      <p class="text-body-2 text-medium-emphasis mb-6">Access your Tryout App account.</p>
+  <div class="app-content px-4 pt-6 pt-md-16 pb-12 pb-md-16">
+    <v-row justify="center" align="center">
+      <!-- Short reminder of what the account opens; desktop only. -->
+      <v-col cols="12" md="6" lg="5" class="d-none d-md-block pe-md-12">
+        <p class="text-headline-large mb-8 auth-aside__title">Lanjutkan persiapanmu dari titik terakhir.</p>
+        <ul class="auth-aside__list">
+          <li class="d-flex align-center ga-4">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-book-open-page-variant-outline" color="primary" />
+            </v-avatar>
+            <span class="text-body-large">Materi per topik dan paket Latihan tanpa batas waktu</span>
+          </li>
+          <li class="d-flex align-center ga-4">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-timer-outline" color="primary" />
+            </v-avatar>
+            <span class="text-body-large">Try Out berwaktu seperti di hari ujian</span>
+          </li>
+          <li class="d-flex align-center ga-4">
+            <v-avatar color="surface-light" rounded="lg" size="44">
+              <v-icon icon="mdi-lightbulb-on-outline" color="primary" />
+            </v-avatar>
+            <span class="text-body-large">Pembahasan tiap soal setelah kamu selesai mengerjakan</span>
+          </li>
+        </ul>
+      </v-col>
 
-      <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-4">
-        {{ formError }}
-      </v-alert>
+      <v-col cols="12" md="6" lg="5">
+        <v-card class="auth-card rounded-xl pa-6 pa-sm-10 mx-auto">
+          <h1 class="text-headline-medium mb-2">Masuk</h1>
+          <p class="text-body-large text-medium-emphasis mb-8">Masuk ke akunmu untuk lanjut belajar.</p>
 
-      <!-- @submit.prevent ensures no native GET/POST that would serialize creds into the URL -->
-      <form novalidate @submit.prevent="onSubmit">
-        <AppTextField
-          name="email"
-          label="Email"
-          type="email"
-          autocomplete="email"
-          :rules="compose(required('Email'), emailRule)"
-        />
-        <AppPasswordField
-          name="password"
-          label="Password"
-          autocomplete="current-password"
-          :rules="required('Password')"
-        />
+          <v-alert v-if="formError" type="error" variant="tonal" density="comfortable" class="mb-6">
+            {{ formError }}
+          </v-alert>
 
-        <div class="d-flex justify-end mb-4">
-          <RouterLink to="/forgot-password" class="text-body-2 text-primary text-decoration-none">
-            Forgot password?
-          </RouterLink>
-        </div>
+          <!-- @submit.prevent ensures no native GET/POST that would serialize creds into the URL -->
+          <form novalidate @submit.prevent="onSubmit">
+            <AppTextField
+              name="email"
+              label="Email"
+              type="email"
+              autocomplete="email"
+              :rules="compose(required('Email'), emailRule)"
+            />
+            <AppPasswordField
+              name="password"
+              label="Kata sandi"
+              autocomplete="current-password"
+              :rules="required('Password')"
+            />
 
-        <v-btn type="submit" color="primary" size="large" block :loading="submitting">
-          Log in
-        </v-btn>
-      </form>
+            <div class="d-flex justify-end mb-6 text-body-medium">
+              <RouterLink to="/forgot-password" class="app-link">
+                Lupa kata sandi?
+              </RouterLink>
+            </div>
 
-      <v-divider class="my-5" />
-      <p class="text-body-2 text-center mb-0">
-        Don't have an account?
-        <RouterLink to="/signup" class="text-primary text-decoration-none">Sign up</RouterLink>
-      </p>
-    </v-card>
-  </v-container>
+            <v-btn type="submit" color="primary" size="large" block :loading="submitting">
+              Masuk
+            </v-btn>
+          </form>
+
+          <p class="text-body-medium text-medium-emphasis text-center mt-8 mb-0">
+            Belum punya akun?
+            <RouterLink to="/signup" class="app-link">Daftar gratis</RouterLink>
+          </p>
+        </v-card>
+      </v-col>
+    </v-row>
+  </div>
 </template>
+
+<style scoped>
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+}
+
+.auth-aside__title {
+  max-width: 18ch;
+}
+
+.auth-aside__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 20px;
+  max-width: 40ch;
+}
+</style>

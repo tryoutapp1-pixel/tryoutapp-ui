@@ -30,13 +30,18 @@ const emit = defineEmits(['submit'])
 
 <template>
   <v-dialog :model-value="props.modelValue" max-width="440" persistent no-click-animation>
-    <v-card class="pa-2 text-center" role="alertdialog" aria-labelledby="time-up-title">
+    <v-card class="pa-3 text-center" role="alertdialog" aria-labelledby="time-up-title">
       <v-card-text class="pt-6">
-        <v-icon icon="mdi-timer-off-outline" color="error" size="52" class="mb-3" />
-        <h2 id="time-up-title" class="text-h6 font-weight-bold mb-2">Time is up</h2>
-        <p class="text-body-2 mb-1">Your Try Out time has run out. Submit your attempt to see your score.</p>
-        <p class="text-body-2 text-medium-emphasis mb-0">
-          {{ props.answered }} of {{ props.total }} questions answered. Unanswered questions score 0.
+        <v-avatar color="error" variant="tonal" size="64" class="mb-4">
+          <v-icon icon="mdi-timer-off-outline" size="32" />
+        </v-avatar>
+        <h2 id="time-up-title" class="text-title-large mb-2">Waktu habis</h2>
+        <p class="text-body-medium mb-4">
+          Waktu Try Out sudah habis. Kumpulkan jawabanmu untuk melihat skor.
+        </p>
+        <p class="text-body-medium text-medium-emphasis mb-0">
+          <span class="app-figure text-title-medium text-high-emphasis">{{ props.answered }}</span>
+          dari {{ props.total }} soal terjawab. Soal yang tidak dijawab bernilai 0.
         </p>
         <v-alert v-if="props.error" type="error" variant="tonal" density="compact" class="mt-4 text-start">
           {{ props.error }}
@@ -52,7 +57,7 @@ const emit = defineEmits(['submit'])
           :loading="props.submitting"
           @click="emit('submit')"
         >
-          Submit attempt
+          Kumpulkan jawaban
         </v-btn>
       </v-card-actions>
     </v-card>
