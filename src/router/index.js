@@ -55,11 +55,13 @@ const routes = [
       { path: 'subscription', name: 'user-subscription', component: () => import('../views/user/SubscriptionPage.vue') },
       { path: 'transactions', name: 'user-transactions', component: () => import('../views/user/TransactionsPage.vue') },
 
-      // Premium checkout flow (Features 6, 7, 8). Invoice + method selection is
-      // the purchase-preparation stage; payment is the Snap execution stage;
-      // the outcome pages reflect backend/transaction state (never a client-
-      // side Snap callback) after the interaction resolves.
-      { path: 'checkout', name: 'user-checkout', component: () => import('../views/user/CheckoutPage.vue') },
+      // Premium payment flow (Features 7, 8). The Subscription page routes
+      // straight to /app/payment, which creates the order and opens Snap. The
+      // outcome pages reflect backend/transaction state (never a client-side
+      // Snap callback) after the interaction resolves.
+      // The checkout step (Feature 6) is disabled; CheckoutPage.vue is kept
+      // fully commented out for reference.
+      // { path: 'checkout', name: 'user-checkout', component: () => import('../views/user/CheckoutPage.vue') },
       { path: 'payment', name: 'user-payment', component: () => import('../views/user/PaymentPage.vue') },
       { path: 'payment/success', name: 'user-payment-success', component: () => import('../views/user/PaymentSuccessPage.vue') },
       { path: 'payment/pending', name: 'user-payment-pending', component: () => import('../views/user/PaymentPendingPage.vue') },

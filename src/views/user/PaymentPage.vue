@@ -1,18 +1,23 @@
 <script setup>
-// Feature 7 - dedicated payment execution page.
+// Feature 7 - payment page (entry point of the Premium purchase flow).
 //
-// Separate from the checkout/invoice page. It shows the current order and runs
-// the Midtrans Snap popup using the snap_token the backend returned. The Snap
-// callback is treated as informational only: after it resolves we re-read the
-// authoritative subscription + transaction state from the backend and then
-// route to the matching outcome page. The backend webhook (not the client
-// callback) is what actually activates Premium.
+// The Subscription page routes here directly; there is no separate checkout
+// step. The page shows the order summary from the Premium offer. "Bayar
+// sekarang" creates (or resumes) the PENDING transaction and immediately opens
+// the Midtrans Snap popup with the returned snap_token.
 //
-// Guards:
-//  - If there is no active invoice (e.g. direct URL / refresh after the store
-//    cleared), we send the user back to checkout to create one.
-//  - If the subscription is already PREMIUM, we route to the success page.
-//  - A single in-flight flag prevents repeated Snap opens / double submits.
+// Outcome routing is decided by the transaction for THIS order_id, never by the
+// general subscription status: an already-Premium user who renews and then
+// closes Snap must not land on the success page.
+//  - Snap closed (X)      : stay here. Only move on if the backend already shows
+//                           the order as PAID or failed (webhook arrived first).
+//  - Transaction PAID     : success page.
+//  - FAILED/CANCELLED/... : failed page.
+//  - Snap success/pending : pending page until the webhook settles the order.
+//  - Snap error           : failed page.
+// The backend webhook (not the client callback) is what activates Premium.
+//
+// A single in-flight flag prevents double invoice creation / repeated Snap opens.
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -21,16 +26,17 @@ import { useUiStore } from '../../stores/ui'
 import PageHeader from '../../components/PageHeader.vue'
 import StatePanel from '../../components/StatePanel.vue'
 import InvoiceSummary from '../../components/payment/InvoiceSummary.vue'
-import { isSnapConfigured, payWithSnap } from '../../lib/midtrans'
+import { isSnapConfigured } from '../../lib/midtrans'
+import { useSnapPayment } from '../../composables/useSnapPayment'
 
 const router = useRouter()
 const store = useSubscriptionStore()
 const uiStore = useUiStore()
-const { activeInvoice, premiumPlan, isPremium } = storeToRefs(store)
+const { activeInvoice, premiumPlan } = storeToRefs(store)
+const { paying, openSnap } = useSnapPayment()
 
 const loading = ref(true)
 const error = ref('')
-const paying = ref(false)
 const snapConfigured = isSnapConfigured()
 
 /** @type {import('vue').ComputedRef<import('../../types/api').Invoice|null>} */
@@ -39,13 +45,11 @@ const invoice = computed(() => activeInvoice.value)
 async function load() {
   loading.value = true
   error.value = ''
+  // The order is created on "Bayar sekarang", so drop any invoice left from an
+  // earlier visit; the summary must not show a previous order's ID or status.
+  store.clearActiveInvoice()
   try {
     if (!premiumPlan.value) await store.fetchOffer()
-    if (!invoice.value || !invoice.value.snap_token) {
-      // No prepared order — restart the checkout flow.
-      router.replace({ name: 'user-checkout' })
-      return
-    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -54,42 +58,29 @@ async function load() {
 }
 
 async function pay() {
-  if (paying.value || !invoice.value || !snapConfigured) return
-  paying.value = true
+  if (paying.value || !snapConfigured) return
   try {
-    const { outcome } = await payWithSnap(invoice.value.snap_token)
+    // Always ask the backend: it resumes a still-pending order or creates a new
+    // one, so an in-memory token from an earlier (e.g. already PAID) order is
+    // never reused.
+    const result = await openSnap(() => store.createPayment())
+    if (!result) return
+    const { outcome, settledRoute } = result
 
-    // Always re-read authoritative state; the webhook may or may not have run.
-    await store.refreshAfterPayment()
-    await store.findTransactionByOrderId(invoice.value.order_id)
-
-    // Prefer the real subscription/transaction state over the Snap callback.
-    if (isPremium.value) {
-      router.replace({ name: 'user-payment-success' })
-      return
-    }
-    const tx = store.activeTransaction
-    const txStatus = tx && tx.status
-
-    if (txStatus === 'PAID') {
-      router.replace({ name: 'user-payment-success' })
-    } else if (txStatus === 'FAILED' || txStatus === 'CANCELLED' || txStatus === 'EXPIRED') {
-      router.replace({ name: 'user-payment-failed' })
-    } else if (outcome === 'success') {
-      // Snap said success but the webhook hasn't settled the record yet.
-      router.replace({ name: 'user-payment-pending' })
-    } else if (outcome === 'pending') {
-      router.replace({ name: 'user-payment-pending' })
+    if (settledRoute) {
+      router.replace(settledRoute)
+    } else if (outcome === 'close') {
+      // Dismissed without paying: stay here so the user can try again.
+      uiStore.notify('Jendela pembayaran ditutup. Kamu bisa melanjutkan pembayaran kapan saja.', 'info')
     } else if (outcome === 'error') {
       router.replace({ name: 'user-payment-failed' })
     } else {
-      // 'close' with no terminal change: stay here; the invoice is reusable.
-      uiStore.notify('Jendela pembayaran ditutup. Kamu bisa melanjutkan pembayaran kapan saja.', 'info')
+      // 'success' or 'pending' from Snap, but the webhook has not settled the
+      // order yet.
+      router.replace({ name: 'user-payment-pending' })
     }
   } catch (e) {
     uiStore.error(e.message || 'Pembayaran belum bisa dimulai. Coba lagi.')
-  } finally {
-    paying.value = false
   }
 }
 
@@ -98,31 +89,23 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader title="Pembayaran" subtitle="Selesaikan pembayaran untuk upgrade ke Premium.">
+    <PageHeader title="Pembayaran" subtitle="Periksa ringkasan pesanan, lalu selesaikan pembayaran untuk upgrade ke Premium.">
       <template #actions>
-        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: 'user-checkout' }">
+        <v-btn variant="text" prepend-icon="mdi-arrow-left" :to="{ name: 'user-subscription' }">
           Kembali
         </v-btn>
       </template>
     </PageHeader>
 
-    <!-- Static step indicator: this page is step 2 of 3. -->
+    <!-- Static step indicator: this page is step 1 of 2. -->
     <ol class="payment-steps d-flex align-center flex-wrap ga-3 pa-0 mt-0 mb-6" aria-label="Langkah pembelian">
-      <li class="d-flex align-center ga-2 text-medium-emphasis">
-        <span class="app-bubble app-bubble--sm app-bubble--filled">
-          <v-icon icon="mdi-check" size="14" aria-hidden="true" />
-        </span>
-        <span class="text-label-large">Ringkasan</span>
-        <span class="d-sr-only">(selesai)</span>
-      </li>
-      <li class="payment-steps__sep payment-steps__sep--done d-none d-sm-block" aria-hidden="true" />
       <li class="d-flex align-center ga-2" aria-current="step">
-        <span class="app-bubble app-bubble--sm app-bubble--filled app-bubble--current">2</span>
+        <span class="app-bubble app-bubble--sm app-bubble--filled app-bubble--current">1</span>
         <span class="text-label-large">Pembayaran</span>
       </li>
       <li class="payment-steps__sep d-none d-sm-block" aria-hidden="true" />
       <li class="d-flex align-center ga-2 text-medium-emphasis">
-        <span class="app-bubble app-bubble--sm">3</span>
+        <span class="app-bubble app-bubble--sm">2</span>
         <span class="text-label-large">Selesai</span>
       </li>
     </ol>
@@ -150,7 +133,7 @@ onMounted(load)
               class="mt-4"
               prepend-icon="mdi-lock-check-outline"
               :loading="paying"
-              :disabled="paying || !invoice"
+              :disabled="paying || !premiumPlan"
               @click="pay"
             >
               Bayar sekarang
@@ -174,10 +157,6 @@ onMounted(load)
 .payment-steps__sep {
   inline-size: 28px;
   border-top: 2px solid rgb(var(--app-line));
-}
-
-.payment-steps__sep--done {
-  border-top-color: rgb(var(--v-theme-primary));
 }
 
 .payment-note {

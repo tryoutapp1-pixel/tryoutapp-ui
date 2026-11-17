@@ -13,6 +13,9 @@ import userService from '../services/userService'
 /** @typedef {import('../types/api').Invoice} Invoice */
 /** @typedef {import('../types/api').Pagination} Pagination */
 
+/** Transaction statuses that mean the order will never be paid. */
+export const FAILED_TX_STATUSES = ['FAILED', 'CANCELLED', 'EXPIRED']
+
 export const useSubscriptionStore = defineStore('subscription', {
   state: () => ({
     /** @type {Plan[]} */
@@ -139,6 +142,25 @@ export const useSubscriptionStore = defineStore('subscription', {
 
     clearActiveInvoice() {
       this.activeInvoice = null
+    },
+
+    /**
+     * Rebuilds the active invoice from a transaction history row. Used when the
+     * user lands on an outcome page after a full page load (e.g. the Midtrans
+     * Finish Redirect URL), where the in-memory invoice is gone. The Snap token
+     * is not part of the history row, so it is left empty.
+     * @param {Transaction} tx
+     * @param {number} [transactionId]
+     */
+    adoptTransaction(tx, transactionId = 0) {
+      this.activeInvoice = {
+        order_id: tx.order_id,
+        transaction_id: transactionId,
+        snap_token: '',
+        amount: Number(tx.amount),
+        currency: 'IDR',
+        status: tx.status
+      }
     },
 
     /**

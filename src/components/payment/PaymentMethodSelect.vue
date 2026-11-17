@@ -1,3 +1,14 @@
+<!--
+  DISABLED: PaymentMethodSelect.vue (checkout payment-method preview).
+  The purchase flow now goes Subscription -> /app/payment directly, so this
+  file is no longer used. The original code is kept below, fully commented
+  out, for reference. Inner HTML comments are written as '<! -- ... -- >' so
+  they do not close this outer comment; restore them when re-enabling.
+
+  To re-enable: remove this wrapper and the stub template at the bottom,
+  restore the inner comments, and (for CheckoutPage) uncomment the
+  'user-checkout' route in src/router/index.js.
+========================================================================
 <script setup>
 // Payment method selection (Feature 6).
 //
@@ -102,3 +113,7 @@ const selected = computed({
   cursor: pointer;
 }
 </style>
+-->
+
+<!-- Stub so the SFC stays valid if it is ever imported by mistake. -->
+<template><div /></template>

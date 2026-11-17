@@ -1,3 +1,14 @@
+<!--
+  DISABLED: CheckoutPage.vue (Feature 6 checkout step).
+  The purchase flow now goes Subscription -> /app/payment directly, so this
+  file is no longer used. The original code is kept below, fully commented
+  out, for reference. Inner HTML comments are written as '<! -- ... -- >' so
+  they do not close this outer comment; restore them when re-enabling.
+
+  To re-enable: remove this wrapper and the stub template at the bottom,
+  restore the inner comments, and (for CheckoutPage) uncomment the
+  'user-checkout' route in src/router/index.js.
+========================================================================
 <script setup>
 // Feature 6 - invoice and payment method selection (purchase preparation).
 //
@@ -83,7 +94,7 @@ onMounted(load)
       </template>
     </PageHeader>
 
-    <!-- Static step indicator: this page is step 1 of 3. -->
+    <! -- Static step indicator: this page is step 1 of 3. -- >
     <ol class="checkout-steps d-flex align-center flex-wrap ga-3 pa-0 mt-0 mb-6" aria-label="Langkah pembelian">
       <li class="d-flex align-center ga-2" aria-current="step">
         <span class="app-bubble app-bubble--sm app-bubble--filled app-bubble--current">1</span>
@@ -162,3 +173,7 @@ onMounted(load)
   }
 }
 </style>
+-->
+
+<!-- Stub so the SFC stays valid if it is ever imported by mistake. -->
+<template><div /></template>

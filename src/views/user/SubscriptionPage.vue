@@ -1,10 +1,11 @@
 <script setup>
 // FU2 (a/b/c) + FU6 - subscription status and Premium offer.
 //
-// Upgrading routes to the dedicated checkout flow (Feature 6 -> 7 -> 8):
-//   /app/checkout  : invoice summary + payment-method selection
-//   /app/payment   : Midtrans Snap execution
+// Upgrading routes straight to the payment flow (Feature 7 -> 8):
+//   /app/payment   : order summary + "Bayar sekarang" (creates the order and
+//                    opens Midtrans Snap)
 //   /app/payment/* : success / pending / failed outcomes
+// The former /app/checkout step is disabled (see CheckoutPage.vue).
 // The backend webhook remains authoritative for Premium activation; this page
 // only shows the current (authoritative) subscription status.
 import { computed, onMounted } from 'vue'
@@ -52,8 +53,8 @@ function onUpgrade() {
     uiStore.error('Pembayaran online belum dikonfigurasi.')
     return
   }
-  // Go to the purchase-preparation (checkout) stage.
-  router.push({ name: 'user-checkout' })
+  // Go straight to the payment page; the order is created there on "Bayar sekarang".
+  router.push({ name: 'user-payment' })
 }
 
 onMounted(reload)

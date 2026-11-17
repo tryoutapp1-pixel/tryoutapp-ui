@@ -3,7 +3,7 @@
 //
 // Shown when the payment did not go through (Snap error, or the transaction
 // record is FAILED/CANCELLED/EXPIRED). It shows the available failure details
-// and offers a retry that returns the user to the checkout flow. It does NOT
+// and offers a retry that returns the user to the payment page. It does NOT
 // create a new payment automatically. The user must choose to retry, and the
 // backend then reuses or re-creates the invoice idempotently.
 import { computed, onMounted, ref } from 'vue'
@@ -36,11 +36,12 @@ async function load() {
   }
 }
 
-// Retry: drop the stale invoice reference and go back to checkout, which will
-// create/reuse a PENDING transaction. We never silently re-charge.
+// Retry: drop the stale invoice reference and go back to the payment page,
+// where "Bayar sekarang" creates/reuses a PENDING transaction. We never
+// silently re-charge.
 function retry() {
   store.clearActiveInvoice()
-  router.push({ name: 'user-checkout' })
+  router.push({ name: 'user-payment' })
 }
 
 const message = computed(
