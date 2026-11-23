@@ -1,7 +1,9 @@
 // Normalizes any Axios/network error into a safe, user-facing shape.
 //
 // Backend error envelope (verified in api/src/middlewares/errorHandler.js):
-//   { success: false, message, errors? }
+//   { success: false, message, code?, errors? }
+// - `code` is an optional application error code (e.g. EMAIL_PENDING_VERIFICATION),
+//   exposed here as `errorCode` so it does not clash with the HTTP-class `code`.
 // - 400 validation failures include errors: [{ path/param, msg, ... }]
 // - 500 responses return a generic "Internal server error" message
 //
@@ -19,12 +21,13 @@
  * @property {number} [status=0] - HTTP status; 0 when there was no response
  * @property {ApiErrorCode} [code='UNKNOWN']
  * @property {FieldErrors} [fieldErrors={}]
+ * @property {string|null} [errorCode=null] - Application error code from the backend `code` field
  * @property {unknown} [raw=null] - The original error, for debugging only
  */
 
 export class ApiError extends Error {
   /** @param {ApiErrorInit} init */
-  constructor({ message, status = 0, code = 'UNKNOWN', fieldErrors = {}, raw = null }) {
+  constructor({ message, status = 0, code = 'UNKNOWN', fieldErrors = {}, errorCode = null, raw = null }) {
     super(message)
     this.name = 'ApiError'
     /** @type {number} */
@@ -33,6 +36,8 @@ export class ApiError extends Error {
     this.code = code
     /** @type {FieldErrors} */
     this.fieldErrors = fieldErrors
+    /** @type {string|null} */
+    this.errorCode = errorCode
     /** @type {unknown} */
     this.raw = raw
   }
@@ -105,5 +110,7 @@ export function toApiError(error) {
   else if (status === 404) code = 'NOT_FOUND'
   else if (status === 409) code = 'CONFLICT'
 
-  return new ApiError({ message, status, code, fieldErrors, raw: error })
+  const errorCode = data && typeof data.code === 'string' && data.code ? data.code : null
+
+  return new ApiError({ message, status, code, fieldErrors, errorCode, raw: error })
 }

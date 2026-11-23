@@ -5,12 +5,22 @@
 // account and emails a verification link. If the request fails, the safe form
 // values (name, email) are kept so the user can retry; the password is cleared
 // and never persisted. @submit.prevent keeps credentials out of the URL.
+//
+// If the email is already registered but still PENDING_VERIFICATION, the
+// backend answers 409 with code EMAIL_PENDING_VERIFICATION. The email is handed
+// to VerifyEmailPage through the in-memory pendingVerification store (never the
+// URL) and the user is redirected there.
 import { ref } from 'vue'
 import { useForm } from 'vee-validate'
+import { useRouter } from 'vue-router'
 import authService from '../../services/authService'
+import { usePendingVerificationStore } from '../../stores/pendingVerification'
 import { compose, required, email as emailRule, password as passwordRule, maxLength } from '../../lib/validators'
 import AppTextField from '../../components/form/AppTextField.vue'
 import AppPasswordField from '../../components/form/AppPasswordField.vue'
+
+const router = useRouter()
+const pendingVerification = usePendingVerificationStore()
 
 const submitting = ref(false)
 const formError = ref('')
@@ -26,6 +36,7 @@ const { handleSubmit, resetField } = useForm({
 const onSubmit = handleSubmit(async (values) => {
   formError.value = ''
   fieldErrors.value = {}
+  pendingVerification.clear()
   submitting.value = true
   try {
     await authService.signup({
@@ -36,6 +47,13 @@ const onSubmit = handleSubmit(async (values) => {
     submittedEmail.value = values.email
     done.value = true
   } catch (error) {
+    if (error.errorCode === 'EMAIL_PENDING_VERIFICATION') {
+      resetField('password', { value: '' })
+      pendingVerification.set(values.email)
+      // replace: Back should not return to the half-filled signup form.
+      await router.replace({ name: 'verify-email' })
+      return
+    }
     formError.value = error.message
     fieldErrors.value = error.fieldErrors || {}
     // Keep name/email; only clear the password for safety.
