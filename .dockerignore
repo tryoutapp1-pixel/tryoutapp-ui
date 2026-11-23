@@ -1,0 +1,14 @@
+node_modules
+dist
+dist-ssr
+.git
+.gitignore
+.vscode
+.env
+.env.*
+!.env.example
+*.local
+*.log
+docs
+Dockerfile
+.dockerignore
